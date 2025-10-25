@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dash-tailwindcss-plugin"
+version = "0.1.0"
+description = "A Dash plugin for integrating TailwindCSS using Dash 3.x hooks"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [{name = "insistence <3055204202@qq.com>"}]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+dependencies = [
+    "dash>=3.0.0",
+]
+
+[project.optional-dependencies]
+dev = ["build", "twine"]
+test = ["pytest>=6.0"]
+
+[project.scripts]
+dash-tailwindcss-plugin = "dash_tailwindcss_plugin.cli:main"
+
+[tool.setuptools]
+packages = ["dash_tailwindcss_plugin"]
