@@ -46,17 +46,17 @@ class _TailwindCLI:
         )
         parser.add_argument(
             '--input-css-path',
-            default='tailwind_input.css',
+            default='./.tailwind/tailwind_input.css',
             help='Path to input CSS file',
         )
         parser.add_argument(
             '--output-css-path',
-            default='./assets/tailwind.css',
+            default='./.tailwind/tailwind.css',
             help='Path to output CSS file',
         )
         parser.add_argument(
             '--config-js-path',
-            default='tailwind.config.js',
+            default='./.tailwind/tailwind.config.js',
             help='Path to Tailwind config file',
         )
         parser.add_argument(
@@ -156,6 +156,7 @@ class _TailwindCLI:
             node_path = check_or_download_nodejs(download_node=download_node, node_version=node_version, is_cli=True)
 
             # Install Tailwind CSS if not already installed
+            print('Start intializing Tailwind CSS...')
             install_tailwindcss(node_path)
 
             # Create default Tailwind config file with custom content

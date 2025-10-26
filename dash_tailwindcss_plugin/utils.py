@@ -478,6 +478,8 @@ def check_or_download_nodejs(download_node: bool, node_version: str, is_cli: boo
     # First check if Node.js is available in PATH
     is_available, version = check_nodejs_available()
     if is_available:
+        if is_cli:
+            print(f'Using System Default Node.js {version}')
         return None  # Use system Node.js
 
     # If not found and download is not requested, raise error
