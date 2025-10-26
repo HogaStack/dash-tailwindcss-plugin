@@ -26,14 +26,14 @@ class TestTailwindCSSPlugin:
 
         assert plugin.mode == 'offline'
         assert plugin.content_path == ['**/*.py']
-        assert plugin.input_css_path == 'tailwind_input.css'
-        assert plugin.output_css_path == 'assets/tailwind.css'
-        assert plugin.config_js_path == 'tailwind.config.js'
+        assert plugin.input_css_path == '.tailwind/tailwind_input.css'
+        assert plugin.output_css_path == '.tailwind/tailwind.css'
+        assert plugin.config_js_path == '.tailwind/tailwind.config.js'
         assert plugin.cdn_url == 'https://cdn.tailwindcss.com'
         assert plugin.download_node is False
         assert plugin.node_version == '18.17.0'
         assert plugin.tailwind_theme_config == {}
-        assert plugin.clean_after is False
+        assert plugin.clean_after is True
 
     def test_plugin_initialization_with_custom_parameters(self):
         """Test plugin initialization with custom parameters."""
