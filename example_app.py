@@ -10,19 +10,39 @@ except ImportError as e:
     print('Please install required dependencies: pip install -r requirements.txt')
     exit(1)
 
-# Uncomment one of the following lines to test different modes:
-
-# Initialize TailwindCSS plugin in ONLINE mode (CDN)
+# Example 1: Initialize TailwindCSS plugin in ONLINE mode (CDN)
 # setup_tailwindcss_plugin(mode="online")
 
-# OR Initialize TailwindCSS plugin in OFFLINE mode (CLI) - default
+# Example 2: Initialize TailwindCSS plugin in OFFLINE mode (CLI) - default
 # setup_tailwindcss_plugin(mode="offline")
 
-# OR Initialize with custom input CSS path
-setup_tailwindcss_plugin(mode='offline')
+# Example 3: Initialize with custom theme configuration
+theme_config = {
+    "colors": {
+        "brand": {
+            "50": "#eff6ff",
+            "100": "#dbeafe",
+            "200": "#bfdbfe",
+            "300": "#93c5fd",
+            "400": "#60a5fa",
+            "500": "#3b82f6",
+            "600": "#2563eb",
+            "700": "#1d4ed8",
+            "800": "#1e40af",
+            "900": "#1e3a8a"
+        }
+    }
+}
+setup_tailwindcss_plugin(mode="offline", tailwind_theme_config=theme_config)
 
-# OR Initialize TailwindCSS plugin in OFFLINE mode (CLI) - default
-# setup_tailwindcss_plugin(mode="offline")
+# Example 4: Initialize with download_node option
+# setup_tailwindcss_plugin(mode="offline", download_node=True, node_version="18.17.0")
+
+# Example 5: Initialize with cleanup disabled (useful for development)
+# setup_tailwindcss_plugin(mode="offline", clean_after=False)
+
+# Example 6: Initialize with custom skip build parameters
+# setup_tailwindcss_plugin(mode="offline", skip_build_if_recent=True, skip_build_time_threshold=10)
 
 app = Dash(__name__)
 app.title = 'Dash TailwindCSS Plugin Example'
