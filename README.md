@@ -70,8 +70,8 @@ from dash_tailwindcss_plugin import setup_tailwindcss_plugin
 setup_tailwindcss_plugin(
     mode="offline",
     content_path=["**/*.py"],  # Files to scan for Tailwind classes
-    output_css_path="assets/tailwind.css",  # Output CSS file
-    config_js_path="tailwind.config.js",  # Tailwind config file
+    output_css_path=".tailwind/tailwind.css",  # Output CSS file
+    config_js_path=".tailwind/tailwind.config.js",  # Tailwind config file
     download_node=True,  # Download Node.js if not found
     node_version="18.17.0"  # Specify Node.js version to download
 )
@@ -205,11 +205,14 @@ application
 - Larger CSS file (includes all Tailwind classes)
 
 ### Offline Mode
-- Uses `hooks.setup()` to build Tailwind CSS on app startup
+- Uses `hooks.setup(priority=3)` to build Tailwind CSS on app startup
+- Uses `hooks.route(name=built_tailwindcss_link, methods=('GET',), priority=2)` to serve the generated CSS file
+- Uses `hooks.index(priority=1)` to inject the CSS link into the HTML head
 - Automatically installs Tailwind CLI if not present
 - Scans specified files for Tailwind classes to create optimized CSS
 - Automatically downloads Node.js if requested and not found in PATH
 - Automatically cleans up temporary files after build (unless disabled)
+- **Smart Rebuild**: Skips rebuilding if CSS file was generated within the last 5 seconds
 
 ## Configuration
 
@@ -217,14 +220,16 @@ The plugin accepts the following parameters:
 
 - `mode`: "online" or "offline" (default: "offline")
 - `content_path`: Glob patterns for files to scan (default: ["**/*.py"])
-- `output_css_path`: Path to output CSS file (default: "assets/tailwind.css")
-- `config_js_path`: Path to Tailwind config file (default: "tailwind.config.js")
+- `input_css_path`: Path to input CSS file (default: ".tailwind/tailwind_input.css")
+- `output_css_path`: Path to output CSS file (default: ".tailwind/tailwind.css")
+- `config_js_path`: Path to Tailwind config file (default: ".tailwind/tailwind.config.js")
 - `cdn_url`: CDN URL for online mode (default: "https://cdn.tailwindcss.com")
 - `download_node`: Whether to download Node.js if not found (default: False)
 - `node_version`: Node.js version to download if download_node is True (default: "18.17.0")
-- `input_css_path`: Path to input CSS file (default: "tailwind_input.css")
 - `tailwind_theme_config`: Dictionary of custom theme configuration for Tailwind CSS (default: None)
 - `clean_after`: Whether to clean up generated files after build (default: True)
+- `skip_build_if_recent`: Whether to skip build if CSS file was recently generated (default: True)
+- `skip_build_time_threshold`: Time threshold in seconds to consider CSS file as recent (default: 5)
 
 ## Development
 
@@ -302,10 +307,10 @@ dash-tailwindcss-plugin clean             # Clean up generated files
 ### CLI Options
 
 All commands support the following options:
-- `--config-js-path CONFIG`: Path to Tailwind config file
 - `--content-path INPUT`: Glob pattern for files to scan for Tailwind classes. Can be specified multiple times. (default: ["**/*.py"])
-- `--output-css-path OUTPUT`: Path to output CSS file
-- `--input-css-path PATH`: Path to input CSS file (default: "tailwind_input.css")
+- `--input-css-path PATH`: Path to input CSS file (default: "./.tailwind/tailwind_input.css") 
+- `--output-css-path OUTPUT`: Path to output CSS file (default: "./.tailwind/tailwind.config.js")
+- `--config-js-path CONFIG`: Path to Tailwind config file (default: "./.tailwind/tailwind.css")
 - `--tailwind-theme-config JSON`: JSON string of custom theme configuration for Tailwind CSS
 
 For the `build` command, you can also use:
