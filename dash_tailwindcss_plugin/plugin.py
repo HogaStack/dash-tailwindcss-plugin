@@ -1,6 +1,7 @@
 import os
 import subprocess
 import warnings
+import time
 from typing import Optional, Dict, Any
 from dash import Dash, hooks
 from flask import Response
@@ -29,6 +30,8 @@ class _TailwindCSSPlugin:
         node_version: str = '18.17.0',
         tailwind_theme_config: Optional[Dict[Any, Any]] = None,
         clean_after: bool = True,
+        skip_build_if_recent: bool = True,
+        skip_build_time_threshold: int = 5,
     ):
         """
         Initialize Tailwind CSS plugin with specified configuration.
@@ -44,6 +47,8 @@ class _TailwindCSSPlugin:
             node_version (str): Node.js version to download if download_node is True
             tailwind_theme_config (Optional[Dict[Any, Any]]): Custom theme configuration for Tailwind CSS
             clean_after (bool): Whether to clean up generated files after build
+            skip_build_if_recent (bool): Whether to skip build if CSS file was recently generated
+            skip_build_time_threshold (int): Time threshold in seconds to consider CSS file as recent
         """
         self.mode = mode
         self.content_path = content_path
@@ -55,6 +60,8 @@ class _TailwindCSSPlugin:
         self.node_version = node_version
         self.tailwind_theme_config = tailwind_theme_config or {}
         self.clean_after = clean_after
+        self.skip_build_if_recent = skip_build_if_recent
+        self.skip_build_time_threshold = skip_build_time_threshold
 
     def setup_online_mode(self):
         """
@@ -97,6 +104,14 @@ class _TailwindCSSPlugin:
         # Generate Tailwind CSS on app startup
         @hooks.setup(priority=3)
         def generate_tailwindcss(app: Dash):
+            # Check if CSS file exists and was generated recently (within threshold seconds)
+            if self.skip_build_if_recent and os.path.exists(self.output_css_path):
+                file_mod_time = os.path.getmtime(self.output_css_path)
+                current_time = time.time()
+                if current_time - file_mod_time < self.skip_build_time_threshold:
+                    print(f"CSS file {self.output_css_path} was generated recently ({current_time - file_mod_time:.2f}s ago), skipping build...")
+                    return
+            
             self._build_tailwindcss()
 
         @hooks.route(name=built_tailwindcss_link, methods=('GET',), priority=2)
@@ -196,6 +211,8 @@ def setup_tailwindcss_plugin(
     node_version: str = '18.17.0',
     tailwind_theme_config: Optional[Dict[Any, Any]] = None,
     clean_after: bool = True,
+    skip_build_if_recent: bool = True,
+    skip_build_time_threshold: int = 5,
 ):
     """
     Initialize Tailwind CSS plugin with specified mode and configuration.
@@ -211,6 +228,8 @@ def setup_tailwindcss_plugin(
         node_version (str): Node.js version to download if download_node is True
         tailwind_theme_config (Optional[Dict[Any, Any]]): Custom theme configuration for Tailwind CSS
         clean_after (bool): Whether to clean up generated files after build
+        skip_build_if_recent (bool): Whether to skip build if CSS file was recently generated
+        skip_build_time_threshold (int): Time threshold in seconds to consider CSS file as recent
     """
     plugin = _TailwindCSSPlugin(
         mode=mode,
@@ -223,6 +242,8 @@ def setup_tailwindcss_plugin(
         node_version=node_version,
         tailwind_theme_config=tailwind_theme_config,
         clean_after=clean_after,
+        skip_build_if_recent=skip_build_if_recent,
+        skip_build_time_threshold=skip_build_time_threshold,
     )
 
     if mode == 'online':

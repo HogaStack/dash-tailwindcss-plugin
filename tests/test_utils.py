@@ -2,10 +2,14 @@ import pytest
 import os
 import tempfile
 import shutil
+import time
+from unittest.mock import patch, Mock
 from dash_tailwindcss_plugin.utils import (
     _dict_to_js_object,
     create_default_tailwindcss_config,
     create_default_input_tailwindcss,
+    get_command_alias_by_platform,
+    check_nodejs_available,
 )
 
 
@@ -123,6 +127,57 @@ class TestUtils:
         # Check that directory was created
         assert os.path.exists(css_dir)
         assert os.path.exists(input_css_path)
+
+    def test_get_command_alias_by_platform(self):
+        """Test get_command_alias_by_platform function."""
+        # Test with Windows
+        with patch('platform.system', return_value='Windows'):
+            result = get_command_alias_by_platform('npx')
+            assert result == 'npx.cmd'
+        
+        # Test with other systems
+        with patch('platform.system', return_value='Linux'):
+            result = get_command_alias_by_platform('npx')
+            assert result == 'npx'
+
+    def test_check_nodejs_available(self):
+        """Test check_nodejs_available function."""
+        # Mock subprocess.run to return a successful result
+        mock_result = Mock()
+        mock_result.returncode = 0
+        mock_result.stdout = 'v14.17.0\n'  # Note: stdout should be a string, not bytes
+        with patch('subprocess.run', return_value=mock_result):
+            is_available, version = check_nodejs_available()
+            assert is_available is True
+            assert version == 'v14.17.0'
+
+    def test_check_nodejs_available_not_found(self):
+        """Test check_nodejs_available when Node.js is not found."""
+        with patch('subprocess.run', side_effect=FileNotFoundError()):
+            is_available, version = check_nodejs_available()
+            assert is_available is False
+            assert version == ''
+
+    def test_file_time_functions(self):
+        """Test file time related functions."""
+        # Create a temporary file
+        test_dir = tempfile.mkdtemp()
+        test_file = os.path.join(test_dir, 'test.txt')
+        
+        # Create file and check its modification time
+        with open(test_file, 'w') as f:
+            f.write('test content')
+        
+        # Get modification time
+        mod_time = os.path.getmtime(test_file)
+        current_time = time.time()
+        
+        # Verify the file was created recently
+        assert current_time - mod_time < 5  # Should be created within 5 seconds
+        
+        # Clean up
+        os.remove(test_file)
+        os.rmdir(test_dir)
 
 
 if __name__ == '__main__':
