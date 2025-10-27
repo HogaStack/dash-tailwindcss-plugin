@@ -185,7 +185,7 @@ def install_tailwindcss(node_path=None):
         warnings.warn(f'Could not install Tailwind CSS: {e}')
 
 
-def _dict_to_js_object(d: Dict[Any, Any], indent: int = 0) -> str:
+def dict_to_js_object(d: Dict[Any, Any], indent: int = 0) -> str:
     """
     Convert a Python dictionary to a JavaScript object string representation.
 
@@ -205,7 +205,7 @@ def _dict_to_js_object(d: Dict[Any, Any], indent: int = 0) -> str:
     items = []
     for key, value in d.items():
         if isinstance(value, dict):
-            items.append(f'{next_indent_str}{key}: {_dict_to_js_object(value, indent + 1)}')
+            items.append(f'{next_indent_str}{key}: {dict_to_js_object(value, indent + 1)}')
         elif isinstance(value, str):
             items.append(f'{next_indent_str}{key}: "{value}"')
         elif isinstance(value, bool):
@@ -217,7 +217,7 @@ def _dict_to_js_object(d: Dict[Any, Any], indent: int = 0) -> str:
             array_items = []
             for item in value:
                 if isinstance(item, dict):
-                    array_items.append(_dict_to_js_object(item, indent + 2))
+                    array_items.append(dict_to_js_object(item, indent + 2))
                 elif isinstance(item, str):
                     array_items.append(f'"{item}"')
                 elif isinstance(item, bool):
@@ -254,7 +254,7 @@ def create_default_tailwindcss_config(
 
     # Handle theme configuration
     if theme_config:
-        theme_str = _dict_to_js_object(theme_config, 2)
+        theme_str = dict_to_js_object(theme_config, 2)
         # Ensure theme_str is properly indented within the config
         theme_lines = theme_str.split('\n')
         indented_theme_lines = ['    ' + line if line.strip() else line for line in theme_lines]

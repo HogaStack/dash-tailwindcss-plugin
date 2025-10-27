@@ -10,6 +10,7 @@ from .utils import (
     clean_generated_files,
     create_default_input_tailwindcss,
     create_default_tailwindcss_config,
+    dict_to_js_object,
     get_build_tailwind_cmd,
     install_tailwindcss,
 )
@@ -73,8 +74,24 @@ class _TailwindCSSPlugin:
 
         @hooks.index()
         def add_tailwindcss_cdn(index_string: str) -> str:
-            # Insert Tailwind CSS CDN script into the head section
+            # Create Tailwind CSS CDN script with theme configuration
             tailwind_script = f'<script src="{self.cdn_url}"></script>\n'
+
+            # Add theme configuration script if provided
+            if self.tailwind_theme_config:
+                # Convert Python dict to JavaScript object using the utility function
+                theme_config_js = dict_to_js_object(self.tailwind_theme_config)
+
+                # Add configuration script
+                config_script = f"""<script>
+  tailwind.config = {{
+    theme: {{
+      extend: {theme_config_js}
+    }}
+  }};
+</script>
+"""
+                tailwind_script += config_script
 
             # Look for the closing head tag and insert the script before it
             if '</head>' in index_string:

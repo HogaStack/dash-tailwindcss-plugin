@@ -5,7 +5,7 @@ import shutil
 import time
 from unittest.mock import patch, Mock
 from dash_tailwindcss_plugin.utils import (
-    _dict_to_js_object,
+    dict_to_js_object,
     create_default_tailwindcss_config,
     create_default_input_tailwindcss,
     get_command_alias_by_platform,
@@ -28,28 +28,28 @@ class TestUtils:
         shutil.rmtree(self.test_dir, ignore_errors=True)
 
     def test_dict_to_js_object_empty_dict(self):
-        """Test _dict_to_js_object with empty dictionary."""
-        result = _dict_to_js_object({})
+        """Test dict_to_js_object with empty dictionary."""
+        result = dict_to_js_object({})
         assert result == '{}'
 
     def test_dict_to_js_object_simple_dict(self):
-        """Test _dict_to_js_object with simple dictionary."""
+        """Test dict_to_js_object with simple dictionary."""
         test_dict = {'key': 'value'}
-        result = _dict_to_js_object(test_dict)
+        result = dict_to_js_object(test_dict)
         expected = '{\n  key: "value"\n}'
         assert result == expected
 
     def test_dict_to_js_object_nested_dict(self):
-        """Test _dict_to_js_object with nested dictionary."""
+        """Test dict_to_js_object with nested dictionary."""
         test_dict = {'outer': {'inner': 'value'}}
-        result = _dict_to_js_object(test_dict)
+        result = dict_to_js_object(test_dict)
         expected = '{\n  outer: {\n    inner: "value"\n  }\n}'
         assert result == expected
 
     def test_dict_to_js_object_mixed_types(self):
-        """Test _dict_to_js_object with mixed value types."""
+        """Test dict_to_js_object with mixed value types."""
         test_dict = {'string': 'value', 'number': 42, 'float': 3.14, 'boolean': True, 'list': ['item1', 'item2']}
-        result = _dict_to_js_object(test_dict)
+        result = dict_to_js_object(test_dict)
         expected = (
             '{\n  string: "value",\n  number: 42,\n  float: 3.14,\n  boolean: true,\n  list: ["item1", "item2"]\n}'
         )
@@ -134,7 +134,7 @@ class TestUtils:
         with patch('platform.system', return_value='Windows'):
             result = get_command_alias_by_platform('npx')
             assert result == 'npx.cmd'
-        
+
         # Test with other systems
         with patch('platform.system', return_value='Linux'):
             result = get_command_alias_by_platform('npx')
@@ -163,18 +163,18 @@ class TestUtils:
         # Create a temporary file
         test_dir = tempfile.mkdtemp()
         test_file = os.path.join(test_dir, 'test.txt')
-        
+
         # Create file and check its modification time
         with open(test_file, 'w') as f:
             f.write('test content')
-        
+
         # Get modification time
         mod_time = os.path.getmtime(test_file)
         current_time = time.time()
-        
+
         # Verify the file was created recently
         assert current_time - mod_time < 5  # Should be created within 5 seconds
-        
+
         # Clean up
         os.remove(test_file)
         os.rmdir(test_dir)
