@@ -305,7 +305,6 @@ class _TailwindCLI:
                 # If we found npx, use it with node, otherwise fallback to just npx
                 if os.path.exists(npx_path):
                     cmd = [
-                        node_path,
                         npx_path,
                         'tailwindcss',
                         '-i',

@@ -52,7 +52,6 @@ def get_build_tailwind_cmd(
         # If we found npx, use it with node, otherwise fallback to just npx
         if os.path.exists(npx_path):
             cmd = [
-                node_path,
                 npx_path,
                 'tailwindcss',
                 '-i',
@@ -110,7 +109,7 @@ def install_tailwindcss(node_path=None):
 
             # If we found npx, use it with node, otherwise fallback to just npx
             if os.path.exists(npx_path):
-                cmd = [node_path, npx_path, 'tailwindcss', '--help']
+                cmd = [npx_path, 'tailwindcss', '--help']
             else:
                 cmd = [
                     node_path,
@@ -135,7 +134,7 @@ def install_tailwindcss(node_path=None):
 
                 # If we found npm, use it with node, otherwise fallback to just npm
                 if os.path.exists(npm_path):
-                    npm_cmd = [node_path, npm_path, 'init', '-y']
+                    npm_cmd = [npm_path, 'init', '-y']
                 else:
                     npm_cmd = [
                         node_path,
@@ -159,7 +158,6 @@ def install_tailwindcss(node_path=None):
                 # If we found npm, use it with node, otherwise fallback to just npm
                 if os.path.exists(npm_path):
                     install_cmd = [
-                        node_path,
                         npm_path,
                         'install',
                         '-D',
