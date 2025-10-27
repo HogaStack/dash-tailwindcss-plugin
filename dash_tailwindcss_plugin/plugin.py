@@ -1,10 +1,10 @@
 import os
 import subprocess
-import warnings
 import time
-from typing import Optional, Dict, Any
+import warnings
 from dash import Dash, hooks
 from flask import Response
+from typing import Any, Dict, List, Literal, Optional
 from .utils import (
     check_or_download_nodejs,
     clean_generated_files,
@@ -20,8 +20,8 @@ class _TailwindCSSPlugin:
 
     def __init__(
         self,
-        mode: str = 'offline',
-        content_path: list = ['**/*.py'],
+        mode: Literal['offline', 'online'] = 'offline',
+        content_path: List[str] = ['**/*.py'],
         input_css_path: str = '.tailwind/tailwind_input.css',
         output_css_path: str = '.tailwind/tailwind.css',
         config_js_path: str = '.tailwind/tailwind.config.js',
@@ -37,8 +37,8 @@ class _TailwindCSSPlugin:
         Initialize Tailwind CSS plugin with specified configuration.
 
         Args:
-            mode (str): "online" or "offline"
-            content_path (list): Glob patterns for files to scan for Tailwind classes
+            mode (Literal['offline', 'online']): Mode of operation ('offline' or 'online')
+            content_path (List[str]): Glob patterns for files to scan for Tailwind classes
             input_css_path (str): Path to input CSS file
             output_css_path (str): Path to output CSS file
             config_js_path (str): Path to Tailwind config file
@@ -201,8 +201,8 @@ class _TailwindCSSPlugin:
 
 
 def setup_tailwindcss_plugin(
-    mode: str = 'offline',
-    content_path: list = ['**/*.py'],
+    mode: Literal['online', 'offline'] = 'offline',
+    content_path: List[str] = ['**/*.py'],
     input_css_path: str = '.tailwind/tailwind_input.css',
     output_css_path: str = '.tailwind/tailwind.css',
     config_js_path: str = '.tailwind/tailwind.config.js',
@@ -218,8 +218,8 @@ def setup_tailwindcss_plugin(
     Initialize Tailwind CSS plugin with specified mode and configuration.
 
     Args:
-        mode (str): "online" or "offline"
-        content_path (list): Glob patterns for files to scan for Tailwind classes
+        mode (Literal['online', 'offline']): Mode of operation ('offline' or 'online')
+        content_path (List[str]): Glob patterns for files to scan for Tailwind classes
         input_css_path (str): Path to input CSS file
         output_css_path (str): Path to output CSS file
         config_js_path (str): Path to Tailwind config file

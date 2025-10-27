@@ -1,12 +1,12 @@
 import os
 import platform
-import urllib.request
-import tarfile
-import zipfile
 import shutil
 import subprocess
+import tarfile
+import urllib.request
 import warnings
-from typing import Optional, Dict, Any
+import zipfile
+from typing import Any, Dict, List, Optional
 
 
 def get_command_alias_by_platform(command: str) -> str:
@@ -234,7 +234,7 @@ def _dict_to_js_object(d: Dict[Any, Any], indent: int = 0) -> str:
 
 
 def create_default_tailwindcss_config(
-    content_path: list,
+    content_path: List[str],
     config_js_path: str,
     theme_config: Optional[Dict[Any, Any]] = None,
 ):
@@ -242,7 +242,7 @@ def create_default_tailwindcss_config(
     Create a default Tailwind config file
 
     Args:
-        content_path (list): Glob patterns for files to scan for Tailwind classes
+        content_path (List[str]): Glob patterns for files to scan for Tailwind classes
         config_js_path (str): Path to the Tailwind config file
         theme_config (Optional[Dict[Any, Any]], optional): Custom theme configuration for Tailwind CSS
 
