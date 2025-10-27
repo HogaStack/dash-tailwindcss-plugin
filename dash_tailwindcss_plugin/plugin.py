@@ -182,7 +182,7 @@ class _TailwindCSSPlugin:
             )
 
             # Check if Tailwind CSS is installed
-            print('Start intializing Tailwind CSS...')
+            print('Start initializing Tailwind CSS...')
             install_tailwindcss(node_path)
 
             # Create default config if it doesn't exist

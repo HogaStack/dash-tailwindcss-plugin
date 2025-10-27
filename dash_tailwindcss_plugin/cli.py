@@ -156,7 +156,7 @@ class _TailwindCLI:
             node_path = check_or_download_nodejs(download_node=download_node, node_version=node_version, is_cli=True)
 
             # Install Tailwind CSS if not already installed
-            print('Start intializing Tailwind CSS...')
+            print('Start initializing Tailwind CSS...')
             install_tailwindcss(node_path)
 
             # Create default Tailwind config file with custom content
@@ -211,6 +211,7 @@ class _TailwindCLI:
             node_path = check_or_download_nodejs(download_node=download_node, node_version=node_version, is_cli=True)
 
             # Check if Tailwind CSS is installed
+            print('Start initializing Tailwind CSS...')
             install_tailwindcss(node_path)
 
             # Check and create config file if it doesn't exist
