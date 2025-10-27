@@ -3,7 +3,7 @@ import subprocess
 import time
 import warnings
 from dash import Dash, hooks
-from flask import Response
+from flask import Response, send_file
 from typing import Any, Dict, List, Literal, Optional
 from .utils import (
     check_or_download_nodejs,
@@ -109,19 +109,25 @@ class _TailwindCSSPlugin:
                 file_mod_time = os.path.getmtime(self.output_css_path)
                 current_time = time.time()
                 if current_time - file_mod_time < self.skip_build_time_threshold:
-                    print(f"CSS file {self.output_css_path} was generated recently ({current_time - file_mod_time:.2f}s ago), skipping build...")
+                    print(
+                        f'CSS file {self.output_css_path} was generated recently ({current_time - file_mod_time:.2f}s ago), skipping build...'
+                    )
                     return
-            
+
             self._build_tailwindcss()
 
         @hooks.route(name=built_tailwindcss_link, methods=('GET',), priority=2)
         def serve_tailwindcss():
             # Check if the CSS file exists
             if os.path.exists(self.output_css_path):
-                # Read and return the CSS file content
-                with open(self.output_css_path, 'r', encoding='utf-8') as f:
-                    css_content = f.read()
-                return Response(css_content, mimetype='text/css')
+                try:
+                    # Return the CSS file
+                    return send_file(self.output_css_path, mimetype='text/css')
+                except Exception:
+                    # If there's an error return the file, return the content directly
+                    with open(self.output_css_path, 'r', encoding='utf-8') as f:
+                        css_content = f.read()
+                    return Response(css_content, mimetype='text/css')
             else:
                 # Return 404 if file not found
                 return Response('CSS file not found', status=404, mimetype='text/plain')
