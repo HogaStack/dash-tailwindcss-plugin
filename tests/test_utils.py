@@ -6,10 +6,8 @@ import time
 from unittest.mock import patch, Mock
 from dash_tailwindcss_plugin.utils import (
     dict_to_js_object,
-    create_default_tailwindcss_config,
-    create_default_input_tailwindcss,
-    get_command_alias_by_platform,
-    check_nodejs_available,
+    NodeManager,
+    TailwindCommand,
 )
 
 
@@ -56,11 +54,23 @@ class TestUtils:
         assert result == expected
 
     def test_create_default_tailwindcss_config(self):
-        """Test create_default_tailwindcss_config function."""
+        """Test create_default_tailwindcss_config method."""
         config_path = 'test.config.js'
         content_path = ['*.html', '*.js']
+        
+        # Create a TailwindCommand instance to access the method
+        tailwind_command = TailwindCommand(
+            node_path=None,
+            npm_path='npm',
+            npx_path='npx',
+            content_path=content_path,
+            input_css_path='input.css',
+            output_css_path='output.css',
+            config_js_path=config_path,
+            is_cli=False
+        )
 
-        create_default_tailwindcss_config(content_path, config_path)
+        tailwind_command.create_default_tailwindcss_config()
 
         # Check that file was created
         assert os.path.exists(config_path)
@@ -73,12 +83,25 @@ class TestUtils:
             assert 'plugins: []' in content
 
     def test_create_default_tailwindcss_config_with_theme(self):
-        """Test create_default_tailwindcss_config function with theme configuration."""
+        """Test create_default_tailwindcss_config method with theme configuration."""
         config_path = 'test.config.js'
         content_path = ['*.html']
         theme_config = {'colors': {'primary': '#ff0000'}}
+        
+        # Create a TailwindCommand instance to access the method
+        tailwind_command = TailwindCommand(
+            node_path=None,
+            npm_path='npm',
+            npx_path='npx',
+            content_path=content_path,
+            input_css_path='input.css',
+            output_css_path='output.css',
+            config_js_path=config_path,
+            is_cli=False,
+            theme_config=theme_config
+        )
 
-        create_default_tailwindcss_config(content_path, config_path, theme_config)
+        tailwind_command.create_default_tailwindcss_config()
 
         # Check that file was created
         assert os.path.exists(config_path)
@@ -90,10 +113,22 @@ class TestUtils:
             assert 'primary: "#ff0000"' in content
 
     def test_create_default_input_tailwindcss(self):
-        """Test create_default_input_tailwindcss function."""
+        """Test create_default_input_tailwindcss method."""
         input_css_path = 'test_input.css'
+        
+        # Create a TailwindCommand instance to access the method
+        tailwind_command = TailwindCommand(
+            node_path=None,
+            npm_path='npm',
+            npx_path='npx',
+            content_path=['*.html'],
+            input_css_path=input_css_path,
+            output_css_path='output.css',
+            config_js_path='config.js',
+            is_cli=False
+        )
 
-        create_default_input_tailwindcss(input_css_path)
+        tailwind_command.create_default_input_tailwindcss()
 
         # Check that file was created
         assert os.path.exists(input_css_path)
@@ -110,8 +145,20 @@ class TestUtils:
         config_dir = 'config'
         config_path = os.path.join(config_dir, 'test.config.js')
         content_path = ['*.html']
+        
+        # Create a TailwindCommand instance to access the method
+        tailwind_command = TailwindCommand(
+            node_path=None,
+            npm_path='npm',
+            npx_path='npx',
+            content_path=content_path,
+            input_css_path='input.css',
+            output_css_path='output.css',
+            config_js_path=config_path,
+            is_cli=False
+        )
 
-        create_default_tailwindcss_config(content_path, config_path)
+        tailwind_command.create_default_tailwindcss_config()
 
         # Check that directory was created
         assert os.path.exists(config_dir)
@@ -121,40 +168,58 @@ class TestUtils:
         """Test that create_default_input_tailwindcss creates directory if it doesn't exist."""
         css_dir = 'assets'
         input_css_path = os.path.join(css_dir, 'test_input.css')
+        
+        # Create a TailwindCommand instance to access the method
+        tailwind_command = TailwindCommand(
+            node_path=None,
+            npm_path='npm',
+            npx_path='npx',
+            content_path=['*.html'],
+            input_css_path=input_css_path,
+            output_css_path='output.css',
+            config_js_path='config.js',
+            is_cli=False
+        )
 
-        create_default_input_tailwindcss(input_css_path)
+        tailwind_command.create_default_input_tailwindcss()
 
         # Check that directory was created
         assert os.path.exists(css_dir)
         assert os.path.exists(input_css_path)
 
     def test_get_command_alias_by_platform(self):
-        """Test get_command_alias_by_platform function."""
+        """Test get_command_alias_by_platform method."""
+        node_manager = NodeManager(download_node=False, node_version='18.17.0')
+        
         # Test with Windows
         with patch('platform.system', return_value='Windows'):
-            result = get_command_alias_by_platform('npx')
+            result = node_manager.get_command_alias_by_platform('npx')
             assert result == 'npx.cmd'
 
         # Test with other systems
         with patch('platform.system', return_value='Linux'):
-            result = get_command_alias_by_platform('npx')
+            result = node_manager.get_command_alias_by_platform('npx')
             assert result == 'npx'
 
     def test_check_nodejs_available(self):
-        """Test check_nodejs_available function."""
+        """Test check_nodejs_available method."""
+        node_manager = NodeManager(download_node=False, node_version='18.17.0')
+        
         # Mock subprocess.run to return a successful result
         mock_result = Mock()
         mock_result.returncode = 0
         mock_result.stdout = 'v14.17.0\n'  # Note: stdout should be a string, not bytes
         with patch('subprocess.run', return_value=mock_result):
-            is_available, version = check_nodejs_available()
+            is_available, version = node_manager.check_nodejs_available()
             assert is_available is True
             assert version == 'v14.17.0'
 
     def test_check_nodejs_available_not_found(self):
         """Test check_nodejs_available when Node.js is not found."""
+        node_manager = NodeManager(download_node=False, node_version='18.17.0')
+        
         with patch('subprocess.run', side_effect=FileNotFoundError()):
-            is_available, version = check_nodejs_available()
+            is_available, version = node_manager.check_nodejs_available()
             assert is_available is False
             assert version == ''
 

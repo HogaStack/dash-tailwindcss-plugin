@@ -1,19 +1,9 @@
 import os
-import subprocess
 import time
-import warnings
 from dash import Dash, hooks
 from flask import Response, send_file
 from typing import Any, Dict, List, Literal, Optional
-from .utils import (
-    check_or_download_nodejs,
-    clean_generated_files,
-    create_default_input_tailwindcss,
-    create_default_tailwindcss_config,
-    dict_to_js_object,
-    get_build_tailwind_cmd,
-    install_tailwindcss,
-)
+from .utils import dict_to_js_object, logger, NodeManager, TailwindCommand
 
 
 class _TailwindCSSPlugin:
@@ -51,6 +41,22 @@ class _TailwindCSSPlugin:
             skip_build_if_recent (bool): Whether to skip build if CSS file was recently generated
             skip_build_time_threshold (int): Time threshold in seconds to consider CSS file as recent
         """
+        node_manager = NodeManager(
+            download_node=download_node,
+            node_version=node_version,
+            is_cli=False,
+        )
+        self.tailwind_command = TailwindCommand(
+            node_path=node_manager.node_path,
+            npm_path=node_manager.npm_path,
+            npx_path=node_manager.npx_path,
+            content_path=content_path,
+            input_css_path=input_css_path,
+            output_css_path=output_css_path,
+            config_js_path=config_js_path,
+            is_cli=False,
+            theme_config=tailwind_theme_config,
+        )
         self.mode = mode
         self.content_path = content_path
         self.input_css_path = input_css_path
@@ -126,8 +132,9 @@ class _TailwindCSSPlugin:
                 file_mod_time = os.path.getmtime(self.output_css_path)
                 current_time = time.time()
                 if current_time - file_mod_time < self.skip_build_time_threshold:
-                    print(
-                        f'CSS file {self.output_css_path} was generated recently ({current_time - file_mod_time:.2f}s ago), skipping build...'
+                    logger.info(
+                        f'⚡ CSS file {self.output_css_path} was generated recently '
+                        f'({current_time - file_mod_time:.2f}s ago), skipping build...'
                     )
                     return
 
@@ -174,53 +181,11 @@ class _TailwindCSSPlugin:
             None
         """
         try:
-            # Check if Node.js is available or download it if requested
-            node_path = check_or_download_nodejs(
-                download_node=self.download_node,
-                node_version=self.node_version,
-                is_cli=False,
-            )
-
-            # Check if Tailwind CSS is installed
-            print('Start initializing Tailwind CSS...')
-            install_tailwindcss(node_path)
-
-            # Create default config if it doesn't exist
-            if not os.path.exists(self.config_js_path):
-                create_default_tailwindcss_config(self.content_path, self.config_js_path, self.tailwind_theme_config)
-
-            # Create default input Tailwind CSS file if it doesn't exist
-            if not os.path.exists(self.input_css_path):
-                create_default_input_tailwindcss(self.input_css_path)
-
-            print('Tailwind CSS initialized successfully!')
-
-            # Build CSS
-            print(f'Building Tailwind CSS from {self.input_css_path} to {self.output_css_path}...')
-            cmd = get_build_tailwind_cmd(
-                node_path,
-                self.input_css_path,
-                self.output_css_path,
-                self.config_js_path,
-            )
-
-            result = subprocess.run(cmd, capture_output=True, text=True)
-            if result.returncode != 0:
-                warnings.warn(f'Tailwind CSS build failed: {result.stderr}')
-            else:
-                print('Build completed successfully!')
-                print(f'Tailwind CSS built successfully to {self.output_css_path}')
-
-            # Clean up generated files to keep directory clean if requested
+            built = self.tailwind_command.init().install().build()
             if self.clean_after:
-                clean_generated_files(
-                    input_css_path=self.input_css_path,
-                    config_js_path=self.config_js_path,
-                    is_cli=False,
-                )
-
+                built.clean()
         except Exception as e:
-            warnings.warn(f'Failed to build Tailwind CSS: {e}')
+            logger.error(f'❌ Failed to build Tailwind CSS: {e}')
 
 
 def setup_tailwindcss_plugin(

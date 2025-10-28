@@ -3,184 +3,53 @@ import platform
 import shutil
 import subprocess
 import tarfile
+from typing_extensions import Self
 import urllib.request
-import warnings
+import logging
 import zipfile
 from typing import Any, Dict, List, Optional
 
 
-def get_command_alias_by_platform(command: str) -> str:
-    """
-    Get the command alias for a given command on the current platform.
+# Custom log formatter to add colors for different log levels
+class ColoredFormatter(logging.Formatter):
+    """Custom log formatter to add colors for different log levels and emoji"""
 
-    Args:
-        command (str): Command to get alias for
-    Returns:
-        str: Command alias
-    """
-    if platform.system().lower() == 'windows':
-        return command + '.cmd'
-    else:
-        return command
+    # ANSI颜色代码
+    COLORS = {
+        'DEBUG': '\033[36m',  # cyan
+        'INFO': '\033[32m',  # green
+        'WARNING': '\033[33m',  # yellow
+        'ERROR': '\033[31m',  # red
+        'CRITICAL': '\033[35m',  # purple
+        'RESET': '\033[0m',  # reset
+    }
 
+    def format(self, record):
+        # Obtain the color corresponding to the log level
+        log_color = self.COLORS.get(record.levelname, self.COLORS['RESET'])
+        reset_color = self.COLORS['RESET']
 
-def get_build_tailwind_cmd(
-    node_path: Optional[str],
-    input_css_path: str,
-    output_css_path: str,
-    config_js_path: str,
-) -> list[str]:
-    """
-    Get the command to build Tailwind CSS
+        # Add color to log level
+        record.levelname = f'{log_color}{record.levelname}{reset_color}'
 
-    Args:
-        node_path (str, optional): Path to Node.js executable
-        input_css_path (str): Path to the input CSS file
-        output_css_path (str): Path to the output CSS file
-        config_js_path (str): Path to the Tailwind config file
-    Returns:
-        list[str]: Command to build Tailwind CSS
-    """
-    if node_path:
-        # When using downloaded Node.js, we need to use npx from the same directory
-        node_dir = os.path.dirname(node_path)
-        npx_path = os.path.join(node_dir, get_command_alias_by_platform('npx'))
-        # If npx doesn't exist in the same directory, check in bin subdirectory
-        if not os.path.exists(npx_path):
-            npx_path = os.path.join(node_dir, 'bin', get_command_alias_by_platform('npx'))
-
-        # If we found npx, use it with node, otherwise fallback to just npx
-        if os.path.exists(npx_path):
-            cmd = [
-                npx_path,
-                'tailwindcss',
-                '-i',
-                input_css_path,
-                '-o',
-                output_css_path,
-                '-c',
-                config_js_path,
-            ]
-        else:
-            cmd = [
-                node_path,
-                get_command_alias_by_platform('npx'),
-                'tailwindcss',
-                '-i',
-                input_css_path,
-                '-o',
-                output_css_path,
-                '-c',
-                config_js_path,
-            ]
-    else:
-        cmd = [
-            get_command_alias_by_platform('npx'),
-            'tailwindcss',
-            '-i',
-            input_css_path,
-            '-o',
-            output_css_path,
-            '-c',
-            config_js_path,
-        ]
-
-    return cmd
+        # Call the format method of the parent class
+        return super().format(record)
 
 
-def install_tailwindcss(node_path=None):
-    """
-    Install Tailwind CSS if not already installed
+# Configure the logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
-    Args:
-        node_path (str, optional): Path to Node.js executable. Defaults to None
-    Raises:
-        Exception: If Tailwind CSS installation fails
-    """
-    try:
-        # Check if tailwindcss is installed
-        if node_path:
-            # When using downloaded Node.js, we need to use npx from the same directory
-            node_dir = os.path.dirname(node_path)
-            npx_path = os.path.join(node_dir, get_command_alias_by_platform('npx'))
-            # If npx doesn't exist in the same directory, check in bin subdirectory
-            if not os.path.exists(npx_path):
-                npx_path = os.path.join(node_dir, 'bin', get_command_alias_by_platform('npx'))
+# Create console processor
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
 
-            # If we found npx, use it with node, otherwise fallback to just npx
-            if os.path.exists(npx_path):
-                cmd = [npx_path, 'tailwindcss', '--help']
-            else:
-                cmd = [
-                    node_path,
-                    get_command_alias_by_platform('npx'),
-                    'tailwindcss',
-                    '--help',
-                ]
-        else:
-            cmd = [get_command_alias_by_platform('npx'), 'tailwindcss', '--help']
+# Create formatter
+formatter = ColoredFormatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
 
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        if result.returncode != 0:
-            # Install Tailwind CSS
-            # Use npm init -y first to ensure package.json exists
-            if node_path:
-                # When using downloaded Node.js, we need to use npm from the same directory
-                node_dir = os.path.dirname(node_path)
-                npm_path = os.path.join(node_dir, get_command_alias_by_platform('npm'))
-                # If npm doesn't exist in the same directory, check in bin subdirectory
-                if not os.path.exists(npm_path):
-                    npm_path = os.path.join(node_dir, 'bin', get_command_alias_by_platform('npm'))
-
-                # If we found npm, use it with node, otherwise fallback to just npm
-                if os.path.exists(npm_path):
-                    npm_cmd = [npm_path, 'init', '-y']
-                else:
-                    npm_cmd = [
-                        node_path,
-                        get_command_alias_by_platform('npm'),
-                        'init',
-                        '-y',
-                    ]
-            else:
-                npm_cmd = [get_command_alias_by_platform('npm'), 'init', '-y']
-            subprocess.run(npm_cmd, capture_output=True, text=True)
-
-            # Then install tailwindcss with a specific version that works
-            if node_path:
-                # When using downloaded Node.js, we need to use npm from the same directory
-                node_dir = os.path.dirname(node_path)
-                npm_path = os.path.join(node_dir, get_command_alias_by_platform('npm'))
-                # If npm doesn't exist in the same directory, check in bin subdirectory
-                if not os.path.exists(npm_path):
-                    npm_path = os.path.join(node_dir, 'bin', get_command_alias_by_platform('npm'))
-
-                # If we found npm, use it with node, otherwise fallback to just npm
-                if os.path.exists(npm_path):
-                    install_cmd = [
-                        npm_path,
-                        'install',
-                        '-D',
-                        'tailwindcss@3',
-                    ]
-                else:
-                    install_cmd = [
-                        node_path,
-                        get_command_alias_by_platform('npm'),
-                        'install',
-                        '-D',
-                        'tailwindcss@3',
-                    ]
-            else:
-                install_cmd = [
-                    get_command_alias_by_platform('npm'),
-                    'install',
-                    '-D',
-                    'tailwindcss@3',
-                ]
-            subprocess.run(install_cmd, capture_output=True, text=True)
-    except Exception as e:
-        warnings.warn(f'Could not install Tailwind CSS: {e}')
+# Add handler to logger
+logger.addHandler(console_handler)
 
 
 def dict_to_js_object(d: Dict[Any, Any], indent: int = 0) -> str:
@@ -231,36 +100,300 @@ def dict_to_js_object(d: Dict[Any, Any], indent: int = 0) -> str:
     return '{\n' + ',\n'.join(items) + f'\n{indent_str}}}'
 
 
-def create_default_tailwindcss_config(
-    content_path: List[str],
-    config_js_path: str,
-    theme_config: Optional[Dict[Any, Any]] = None,
-):
-    """
-    Create a default Tailwind config file
+class NodeManager:
+    def __init__(self, download_node: bool, node_version: str, is_cli: bool = False):
+        """
+        Node.js manager class
 
-    Args:
-        content_path (List[str]): Glob patterns for files to scan for Tailwind classes
-        config_js_path (str): Path to the Tailwind config file
-        theme_config (Optional[Dict[Any, Any]], optional): Custom theme configuration for Tailwind CSS
+        Args:
+            download_node (bool): Whether to download Node.js if not found
+            node_version (str): Node.js version to download if download_node is True
+            is_cli (bool): Whether this is being called from CLI (affects error messages)
+        """
+        self.download_node = download_node
+        self.node_version = node_version
+        self.is_cli = is_cli
+        self.log_init = True
 
-    Returns:
-        None
-    """
-    # Convert list of content paths to JSON array format
-    content_paths_str = ', '.join([f'"{path}"' for path in content_path])
+    def check_nodejs_available(self) -> tuple[bool, str]:
+        """
+        Check if Node.js is available in PATH
 
-    # Handle theme configuration
-    if theme_config:
-        theme_str = dict_to_js_object(theme_config, 2)
-        # Ensure theme_str is properly indented within the config
-        theme_lines = theme_str.split('\n')
-        indented_theme_lines = ['    ' + line if line.strip() else line for line in theme_lines]
-        theme_str = '\n'.join(indented_theme_lines)
-    else:
-        theme_str = '{}'
+        Returns:
+            tuple[bool, str]: A tuple containing:
+                - bool: True if Node.js is available, False otherwise
+                - str: The version of Node.js if available, empty string otherwise
+        """
+        try:
+            result = subprocess.run(['node', '--version'], capture_output=True, text=True)
+            if result.returncode == 0:
+                return True, result.stdout.strip()
+        except FileNotFoundError:
+            pass
 
-    config_content = f"""module.exports = {{
+        return False, ''
+
+    def download_nodejs(self) -> str:
+        """
+        Download Node.js for the current platform
+
+        Returns:
+            str: Path to downloaded Node.js executable
+        """
+        # Determine platform
+        system = platform.system().lower()
+        machine = platform.machine().lower()
+
+        # Define download URLs for different platforms
+        if system == 'darwin':  # macOS
+            if machine == 'arm64' or machine == 'aarch64':
+                node_url = f'https://nodejs.org/dist/v{self.node_version}/node-v{self.node_version}-darwin-arm64.tar.gz'
+                node_dir = f'node-v{self.node_version}-darwin-arm64'
+            else:
+                node_url = f'https://nodejs.org/dist/v{self.node_version}/node-v{self.node_version}-darwin-x64.tar.gz'
+                node_dir = f'node-v{self.node_version}-darwin-x64'
+        elif system == 'linux':
+            if machine == 'aarch64':
+                node_url = f'https://nodejs.org/dist/v{self.node_version}/node-v{self.node_version}-linux-arm64.tar.xz'
+                node_dir = f'node-v{self.node_version}-linux-arm64'
+            else:
+                node_url = f'https://nodejs.org/dist/v{self.node_version}/node-v{self.node_version}-linux-x64.tar.xz'
+                node_dir = f'node-v{self.node_version}-linux-x64'
+        elif system == 'windows':
+            node_url = f'https://nodejs.org/dist/v{self.node_version}/node-v{self.node_version}-win-x64.zip'
+            node_dir = f'node-v{self.node_version}-win-x64'
+        else:
+            raise RuntimeError(f'Unsupported platform: {system}')
+
+        # Create directory for downloaded Node.js within the package directory
+        # Use the package directory instead of current working directory
+        # Get the directory of this utils.py file
+        package_dir = os.path.dirname(os.path.abspath(__file__))
+        node_dir_path = os.path.join(package_dir, '.nodejs_cache')
+        if not os.path.exists(node_dir_path):
+            os.makedirs(node_dir_path)
+
+        # Check if Node.js is already downloaded
+        if system == 'windows':
+            node_executable = os.path.join(node_dir_path, node_dir, 'node.exe')
+        else:
+            node_executable = os.path.join(node_dir_path, node_dir, 'bin', 'node')
+
+        # If Node.js already exists, return the path without downloading
+        if os.path.exists(node_executable):
+            if self.log_init:
+                self.log_init = False
+                logger.info(f'📦 Using cached Node.js from {node_executable}')
+            return node_executable
+
+        # Download Node.js
+        node_archive = os.path.join(node_dir_path, os.path.basename(node_url))
+        logger.info('🌐 Node.js not found in PATH. Downloading Node.js...')
+        if self.is_cli:
+            logger.info(f'📥 Downloading Node.js from {node_url}...')
+        urllib.request.urlretrieve(node_url, node_archive)
+
+        # Extract Node.js
+        if self.is_cli:
+            logger.info('🔧 Extracting Node.js...')
+        if node_archive.endswith('.tar.gz'):
+            with tarfile.open(node_archive, 'r:gz') as tar:
+                tar.extractall(node_dir_path)
+        elif node_archive.endswith('.tar.xz'):
+            with tarfile.open(node_archive, 'r:xz') as tar:
+                tar.extractall(node_dir_path)
+        elif node_archive.endswith('.zip'):
+            with zipfile.ZipFile(node_archive, 'r') as zip_ref:
+                zip_ref.extractall(node_dir_path)
+
+        # Remove archive
+        os.remove(node_archive)
+
+        # Make executable if not on Windows
+        if system != 'windows':
+            os.chmod(node_executable, 0o755)
+
+        logger.info(f'✅ Node.js downloaded and extracted to {node_executable}')
+        return node_executable
+
+    def check_or_download_nodejs(self) -> Optional[str]:
+        """
+        Check if Node.js is available or download it if requested
+
+        Returns:
+            Optional[str]: Path to Node.js executable or None if using system Node.js
+        """
+        # First check if Node.js is available in PATH
+        is_available, version = self.check_nodejs_available()
+        if is_available:
+            if self.log_init:
+                self.log_init = False
+                logger.info(f'💻 Using System Default Node.js {version}')
+
+            return None  # Use system Node.js
+
+        # If not found and download is not requested, raise error
+        if not self.download_node:
+            if self.is_cli:
+                raise RuntimeError(
+                    'Node.js is required but not found in PATH. '
+                    'Install Node.js or use --download-node to automatically download it.'
+                )
+            else:
+                raise RuntimeError(
+                    'Node.js is required for offline mode but not found. '
+                    'Install Node.js or use download_node=True to automatically download it.'
+                )
+
+        # Download Node.js using the shared utility function
+        return self.download_nodejs()
+
+    def get_command_alias_by_platform(self, command: str) -> str:
+        """
+        Get the command alias for a given command on the current platform.
+
+        Args:
+            command (str): Command to get alias for
+        Returns:
+            str: Command alias
+        """
+        if platform.system().lower() == 'windows':
+            return command + '.cmd'
+        else:
+            return command
+
+    @property
+    def node_path(self) -> Optional[str]:
+        """
+        Get the path to the Node.js executable
+
+        Returns:
+            Optional[str]: Path to Node.js executable or None if using system Node.js
+        """
+        node_path = self.check_or_download_nodejs()
+
+        return node_path
+
+    @property
+    def npm_path(self) -> str:
+        """
+        Get the path to the npm executable
+
+        Returns:
+            str: Path to npm executable
+        """
+        if self.node_path:
+            # When using downloaded Node.js, we need to use npm from the same directory
+            node_dir = os.path.dirname(self.node_path)
+            npm_path = os.path.join(node_dir, self.get_command_alias_by_platform('npm'))
+            # If npm doesn't exist in the same directory, check in bin subdirectory
+            if not os.path.exists(npm_path):
+                npm_path = os.path.join(node_dir, 'bin', self.get_command_alias_by_platform('npm'))
+
+        else:
+            npm_path = self.get_command_alias_by_platform('npm')
+
+        return npm_path
+
+    @property
+    def npx_path(self) -> str:
+        """
+        Get the path to the npx executable
+
+        Returns:
+            str: Path to npx executable
+        """
+        if self.node_path:
+            # When using downloaded Node.js, we need to use npx from the same directory
+            node_dir = os.path.dirname(self.node_path)
+            npx_path = os.path.join(node_dir, self.get_command_alias_by_platform('npx'))
+            # If npx doesn't exist in the same directory, check in bin subdirectory
+            if not os.path.exists(npx_path):
+                npx_path = os.path.join(node_dir, 'bin', self.get_command_alias_by_platform('npx'))
+
+        else:
+            npx_path = self.get_command_alias_by_platform('npx')
+
+        return npx_path
+
+
+class TailwindCommand:
+    def __init__(
+        self,
+        node_path: Optional[str],
+        npm_path: str,
+        npx_path: str,
+        content_path: List[str],
+        input_css_path: str,
+        output_css_path: str,
+        config_js_path: str,
+        is_cli: bool,
+        theme_config: Optional[Dict[Any, Any]] = None,
+    ):
+        """
+        Initialize the TailwindCommand class
+
+        Args:
+            node_path (Optional[str]): Path to Node.js executable
+            npm_path (str): Path to npm executable
+            npx_path (str): Path to npx executable
+            content_path (List[str]): List of paths to content files
+            input_css_path (str): Path to input CSS file
+            output_css_path (str): Path to output CSS file
+            config_js_path (str): Path to Tailwind config file
+            is_cli (bool): Whether the command is being run from the CLI
+            theme_config (Optional[Dict[Any, Any]]): Custom theme configuration for Tailwind CSS
+        """
+        self.node_path = node_path
+        self.npm_path = npm_path
+        self.npx_path = npx_path
+        self.content_path = content_path
+        self.input_css_path = input_css_path
+        self.output_css_path = output_css_path
+        self.config_js_path = config_js_path
+        self.is_cli = is_cli
+        self.theme_config = theme_config or {}
+
+    def create_default_input_tailwindcss(self):
+        """
+        Create a default input CSS file
+
+        Returns:
+            None
+        """
+        # Ensure assets directory exists
+        assets_dir = os.path.dirname(self.input_css_path)
+        if assets_dir and not os.path.exists(assets_dir):
+            os.makedirs(assets_dir)
+
+        input_css_content = """@tailwind base;
+@tailwind components;
+@tailwind utilities;
+"""
+        with open(self.input_css_path, 'w') as f:
+            f.write(input_css_content)
+
+    def create_default_tailwindcss_config(self):
+        """
+        Create a default Tailwind config file
+
+        Returns:
+            None
+        """
+        # Convert list of content paths to JSON array format
+        content_paths_str = ', '.join([f'"{path}"' for path in self.content_path])
+
+        # Handle theme configuration
+        if self.theme_config:
+            theme_str = dict_to_js_object(self.theme_config, 2)
+            # Ensure theme_str is properly indented within the config
+            theme_lines = theme_str.split('\n')
+            indented_theme_lines = ['    ' + line if line.strip() else line for line in theme_lines]
+            theme_str = '\n'.join(indented_theme_lines)
+        else:
+            theme_str = '{}'
+
+        config_content = f"""module.exports = {{
     content: [{content_paths_str}],
     theme: {{
         extend: {theme_str},
@@ -269,229 +402,276 @@ def create_default_tailwindcss_config(
 }}
 """
 
-    # Ensure config directory exists
-    config_dir = os.path.dirname(config_js_path)
-    if config_dir and not os.path.exists(config_dir):
-        os.makedirs(config_dir)
+        # Ensure config directory exists
+        config_dir = os.path.dirname(self.config_js_path)
+        if config_dir and not os.path.exists(config_dir):
+            os.makedirs(config_dir)
 
-    with open(config_js_path, 'w') as f:
-        f.write(config_content)
+        with open(self.config_js_path, 'w') as f:
+            f.write(config_content)
 
+    def _check_npm_init(self) -> bool:
+        """
+        Check if npm init has been run
 
-def create_default_input_tailwindcss(input_css_path: str):
-    """
-    Create a default input CSS file
+        Returns:
+            bool: True if npm init has been run, False otherwise
+        """
+        return os.path.exists('package.json')
 
-    Args:
-        input_css_path (str): Path to input CSS file
+    def _check_tailwindcss(self) -> bool:
+        """
+        Check if Tailwind CSS is installed
 
-    Returns:
-        None
-    """
-    # Ensure assets directory exists
-    assets_dir = os.path.dirname(input_css_path)
-    if assets_dir and not os.path.exists(assets_dir):
-        os.makedirs(assets_dir)
-
-    input_css_content = """@tailwind base;
-@tailwind components;
-@tailwind utilities;
-"""
-    with open(input_css_path, 'w') as f:
-        f.write(input_css_content)
-
-
-def download_nodejs(node_version: str, is_cli: bool = False) -> str:
-    """
-    Download Node.js for the current platform
-
-    Args:
-        node_version (str): Node.js version to download
-        is_cli (bool): Whether this is being called from CLI (affects messages)
-
-    Returns:
-        str: Path to downloaded Node.js executable
-    """
-    # Determine platform
-    system = platform.system().lower()
-    machine = platform.machine().lower()
-
-    # Define download URLs for different platforms
-    if system == 'darwin':  # macOS
-        if machine == 'arm64' or machine == 'aarch64':
-            node_url = f'https://nodejs.org/dist/v{node_version}/node-v{node_version}-darwin-arm64.tar.gz'
-            node_dir = f'node-v{node_version}-darwin-arm64'
+        Returns:
+            bool: True if Tailwind CSS is installed, False otherwise
+        """
+        if self.node_path:
+            # If we found npx, use it with node, otherwise fallback to just npx
+            if os.path.exists(self.npx_path):
+                cmd = [self.npx_path, 'tailwindcss', '--help']
+            else:
+                cmd = [
+                    self.node_path,
+                    self.npx_path,
+                    'tailwindcss',
+                    '--help',
+                ]
         else:
-            node_url = f'https://nodejs.org/dist/v{node_version}/node-v{node_version}-darwin-x64.tar.gz'
-            node_dir = f'node-v{node_version}-darwin-x64'
-    elif system == 'linux':
-        if machine == 'aarch64':
-            node_url = f'https://nodejs.org/dist/v{node_version}/node-v{node_version}-linux-arm64.tar.xz'
-            node_dir = f'node-v{node_version}-linux-arm64'
-        else:
-            node_url = f'https://nodejs.org/dist/v{node_version}/node-v{node_version}-linux-x64.tar.xz'
-            node_dir = f'node-v{node_version}-linux-x64'
-    elif system == 'windows':
-        node_url = f'https://nodejs.org/dist/v{node_version}/node-v{node_version}-win-x64.zip'
-        node_dir = f'node-v{node_version}-win-x64'
-    else:
-        raise RuntimeError(f'Unsupported platform: {system}')
+            cmd = [self.npx_path, 'tailwindcss', '--help']
 
-    # Create directory for downloaded Node.js within the package directory
-    # Use the package directory instead of current working directory
-    # Get the directory of this utils.py file
-    package_dir = os.path.dirname(os.path.abspath(__file__))
-    node_dir_path = os.path.join(package_dir, '.nodejs_cache')
-    if not os.path.exists(node_dir_path):
-        os.makedirs(node_dir_path)
+        result = subprocess.run(cmd, capture_output=True, text=True)
 
-    # Check if Node.js is already downloaded
-    if system == 'windows':
-        node_executable = os.path.join(node_dir_path, node_dir, 'node.exe')
-    else:
-        node_executable = os.path.join(node_dir_path, node_dir, 'bin', 'node')
+        return result.returncode == 0
 
-    # If Node.js already exists, return the path without downloading
-    if os.path.exists(node_executable):
-        print(f'Using cached Node.js from {node_executable}')
-        return node_executable
+    def init(self) -> Self:
+        """
+        Initialize Tailwind CSS
 
-    # Download Node.js
-    node_archive = os.path.join(node_dir_path, os.path.basename(node_url))
-    print('Node.js not found in PATH. Downloading Node.js...')
-    if is_cli:
-        print(f'Downloading Node.js from {node_url}...')
-    urllib.request.urlretrieve(node_url, node_archive)
+        Returns:
+            Self: The TailwindCommand instance
+        """
+        logger.info('🚀 Start initializing Tailwind CSS...')
+        try:
+            # Create default config if it doesn't exist
+            if self.is_cli:
+                logger.info('📄 Creating input CSS file...')
+            
+            if not os.path.exists(self.input_css_path):
+                if self.is_cli:
+                    logger.info(
+                        f'🔍 Input CSS file {self.input_css_path} not found. Creating default input CSS file...'
+                    )
+                
+                self.create_default_input_tailwindcss()
+                
+                if self.is_cli:
+                    logger.info(f'💾 Default input CSS file created at: {self.input_css_path}')
 
-    # Extract Node.js
-    if is_cli:
-        print('Extracting Node.js...')
-    if node_archive.endswith('.tar.gz'):
-        with tarfile.open(node_archive, 'r:gz') as tar:
-            tar.extractall(node_dir_path)
-    elif node_archive.endswith('.tar.xz'):
-        with tarfile.open(node_archive, 'r:xz') as tar:
-            tar.extractall(node_dir_path)
-    elif node_archive.endswith('.zip'):
-        with zipfile.ZipFile(node_archive, 'r') as zip_ref:
-            zip_ref.extractall(node_dir_path)
+            # Create default input Tailwind CSS file if it doesn't exist
+            if self.is_cli:
+                logger.info('⚙️ Creating Tailwind config...')
+            
+            if not os.path.exists(self.config_js_path):
+                if self.is_cli:
+                    logger.info(f'🔍 Config file {self.config_js_path} not found. Creating default config file...')
+                
+                self.create_default_tailwindcss_config()
+                
+                if self.is_cli:
+                    logger.info(f'💾 Default config file created at: {self.config_js_path}')
 
-    # Remove archive
-    os.remove(node_archive)
-
-    # Make executable if not on Windows
-    if system != 'windows':
-        os.chmod(node_executable, 0o755)
-
-    if is_cli:
-        print(f'Node.js downloaded and extracted to {node_executable}')
-    return node_executable
-
-
-def clean_generated_files(input_css_path: str, config_js_path: str, is_cli: bool = False) -> None:
-    """
-    Clean up generated files to keep directory clean
-
-    Args:
-        input_css_path (str): Path to input CSS file
-        config_js_path (str): Path to the Tailwind config file
-        is_cli (bool): Whether this is being called from CLI (affects messages)
-
-    Returns:
-        None
-    """
-    files_to_remove = [
-        config_js_path,
-        'package.json',
-        'package-lock.json',
-        input_css_path,
-    ]
-
-    directories_to_remove = ['node_modules']
-
-    if is_cli:
-        print('Cleaning up generated files...')
-
-    # Remove files
-    for file_path in files_to_remove:
-        if os.path.exists(file_path):
-            try:
-                os.remove(file_path)
-                if is_cli:
-                    print(f'Removed {file_path}')
-            except Exception as e:
-                if is_cli:
-                    print(f'Warning: Could not remove {file_path}: {e}')
+            if not self._check_npm_init():
+                # If we found npm, use it with node, otherwise fallback to just npm
+                if self.node_path and not os.path.exists(self.npm_path):
+                    init_cmd = [
+                        self.node_path,
+                        self.npm_path,
+                        'init',
+                        '-y',
+                    ]
                 else:
-                    warnings.warn(f'Could not remove {file_path}: {e}')
+                    init_cmd = [self.npm_path, 'init', '-y']
+                result = subprocess.run(init_cmd, capture_output=True, text=True)
+                if result.returncode != 0:
+                    logger.error(f'❌ Error initializing Tailwind CSS: {result.stderr}')
+                    return self
+            
+            logger.info('✅ Tailwind CSS initialized successfully!')
+        
+        except Exception as e:
+            logger.error(f'❌ Error initializing Tailwind CSS: {e}')
 
-    # Remove directories
-    for dir_path in directories_to_remove:
-        if os.path.exists(dir_path):
-            try:
-                shutil.rmtree(dir_path)
-                if is_cli:
-                    print(f'Removed {dir_path}')
-            except Exception as e:
-                if is_cli:
-                    print(f'Warning: Could not remove {dir_path}: {e}')
+        return self
+
+    def install(self) -> Self:
+        """
+        Install Tailwind CSS
+
+        Returns:
+            Self: The TailwindCommand instance
+        """
+        logger.info('📥 Start installing Tailwind CSS...')
+        try:
+            if not self._check_tailwindcss():
+                # If we found npm, use it with node, otherwise fallback to just npm
+                if self.node_path and not os.path.exists(self.npm_path):
+                    install_cmd = [
+                        self.node_path,
+                        self.npm_path,
+                        'install',
+                        '-D',
+                        'tailwindcss@3',
+                    ]
                 else:
-                    warnings.warn(f'Could not remove {dir_path}: {e}')
+                    install_cmd = [
+                        self.npm_path,
+                        'install',
+                        '-D',
+                        'tailwindcss@3',
+                    ]
+                result = subprocess.run(install_cmd, capture_output=True, text=True)
+                if result.returncode != 0:
+                    logger.error(f'❌ Error installing Tailwind CSS: {result.stderr}')
+                    return self
+            
+            logger.info('✅ Tailwind CSS installed successfully!')
+        
+        except Exception as e:
+            logger.error(f'❌ Error installing Tailwind CSS: {e}')
 
-    if is_cli:
-        print('Cleanup completed.')
+        return self
 
+    def build(self) -> Self:
+        """
+        Build the Tailwind CSS
 
-def check_nodejs_available() -> tuple[bool, str]:
-    """
-    Check if Node.js is available in PATH
+        Returns:
+            Self: The TailwindCommand instance
+        """
+        logger.info(f'🔨 Building Tailwind CSS from {self.input_css_path} to {self.output_css_path}...')
+        try:
+            # If we found npx, use it with node, otherwise fallback to just npx
+            if self.node_path and not os.path.exists(self.npx_path):
+                build_cmd = [
+                    self.node_path,
+                    self.npx_path,
+                    'tailwindcss',
+                    '-i',
+                    self.input_css_path,
+                    '-o',
+                    self.output_css_path,
+                    '-c',
+                    self.config_js_path,
+                ]
+            else:
+                build_cmd: list[str] = [
+                    self.npx_path,
+                    'tailwindcss',
+                    '-i',
+                    self.input_css_path,
+                    '-o',
+                    self.output_css_path,
+                    '-c',
+                    self.config_js_path,
+                ]
 
-    Returns:
-        tuple[bool, str]: A tuple containing:
-            - bool: True if Node.js is available, False otherwise
-            - str: The version of Node.js if available, empty string otherwise
-    """
-    try:
-        result = subprocess.run(['node', '--version'], capture_output=True, text=True)
-        if result.returncode == 0:
-            return True, result.stdout.strip()
-    except FileNotFoundError:
-        pass
+            result = subprocess.run(build_cmd, capture_output=True, text=True)
 
-    return False, ''
+            if result.returncode != 0:
+                logger.error(f'❌ Error building Tailwind CSS: {result.stderr}')
+                return self
 
+            logger.info('✅ Build completed successfully!')
+            logger.info(f'🎨 Tailwind CSS built successfully to {self.output_css_path}')
+        
+        except Exception as e:
+            logger.error(f'❌ Error building Tailwind CSS: {e}')
 
-def check_or_download_nodejs(download_node: bool, node_version: str, is_cli: bool = False) -> Optional[str]:
-    """
-    Check if Node.js is available or download it if requested
+        return self
 
-    Args:
-        download_node (bool): Whether to download Node.js if not found
-        node_version (str): Node.js version to download if download_node is True
-        is_cli (bool): Whether this is being called from CLI (affects error messages)
+    def watch(self) -> Self:
+        """
+        Watch for changes in the input CSS file and rebuild Tailwind CSS
 
-    Returns:
-        str: Path to Node.js executable or None if using system Node.js
-    """
-    # First check if Node.js is available in PATH
-    is_available, version = check_nodejs_available()
-    if is_available:
-        if is_cli:
-            print(f'Using System Default Node.js {version}')
-        return None  # Use system Node.js
+        Returns:
+            Self: The TailwindCommand instance
+        """
+        logger.info(f'👀 Watching for changes in {self.input_css_path}...')
+        try:
+            # If we found npx, use it with node, otherwise fallback to just npx
+            if self.node_path and not os.path.exists(self.npx_path):
+                watch_cmd = [
+                    self.node_path,
+                    self.npx_path,
+                    'tailwindcss',
+                    '-i',
+                    self.input_css_path,
+                    '-o',
+                    self.output_css_path,
+                    '-c',
+                    self.config_js_path,
+                    '--watch',
+                ]
+            else:
+                watch_cmd = [
+                    self.npx_path,
+                    'tailwindcss',
+                    '-i',
+                    self.input_css_path,
+                    '-o',
+                    self.output_css_path,
+                    '-c',
+                    self.config_js_path,
+                    '--watch',
+                ]
+            subprocess.run(watch_cmd)
+        
+        except KeyboardInterrupt:
+            logger.info('👋 Watch stopped.')
+        
+        except Exception as e:
+            logger.error(f'❌ Error watching for changes: {e}')
 
-    # If not found and download is not requested, raise error
-    if not download_node:
-        if is_cli:
-            raise RuntimeError(
-                'Node.js is required but not found in PATH. '
-                'Install Node.js or use --download-node to automatically download it.'
-            )
-        else:
-            raise RuntimeError(
-                'Node.js is required for offline mode but not found. '
-                'Install Node.js or use download_node=True to automatically download it.'
-            )
+        return self
 
-    # Download Node.js using the shared utility function
-    return download_nodejs(node_version, is_cli)
+    def clean(self) -> Self:
+        """
+        Clean up generated files to keep directory clean
+
+        Returns:
+            Self: The TailwindCommand instance
+        """
+        logger.info('🧹 Cleaning up generated files...')
+        files_to_remove = [
+            self.config_js_path,
+            'package.json',
+            'package-lock.json',
+            self.input_css_path,
+        ]
+
+        directories_to_remove = ['node_modules']
+
+        # Remove files
+        for file_path in files_to_remove:
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    if self.is_cli:
+                        logger.info(f'🗑️ Removed {file_path}')
+                except Exception as e:
+                    logger.warning(f'⚠️ Warning: Could not remove {file_path}: {e}')
+
+        # Remove directories
+        for dir_path in directories_to_remove:
+            if os.path.exists(dir_path):
+                try:
+                    shutil.rmtree(dir_path)
+                    if self.is_cli:
+                        logger.info(f'🗑️ Removed {dir_path}')
+                except Exception as e:
+                    logger.warning(f'⚠️ Warning: Could not remove {dir_path}: {e}')
+
+        logger.info('✅ Cleanup completed.')
+
+        return self

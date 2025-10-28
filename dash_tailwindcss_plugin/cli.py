@@ -1,18 +1,6 @@
 import argparse
 import json
-import os
-import subprocess
-import warnings
-from typing import Optional, Dict, Any
-from .utils import (
-    check_or_download_nodejs,
-    clean_generated_files,
-    create_default_input_tailwindcss,
-    create_default_tailwindcss_config,
-    get_command_alias_by_platform,
-    get_build_tailwind_cmd,
-    install_tailwindcss,
-)
+from .utils import logger, NodeManager, TailwindCommand
 
 
 class _TailwindCLI:
@@ -88,267 +76,97 @@ class _TailwindCLI:
             try:
                 theme_config = json.loads(args.tailwind_theme_config)
             except json.JSONDecodeError as e:
-                warnings.warn(f'Invalid JSON for theme config: {e}')
+                logger.error(f'Invalid JSON for theme config: {e}')
                 theme_config = None
 
-        if args.command == 'init':
-            self.init_tailwindcss_config(
-                content_path=args.content_path if args.content_path else ['**/*.py'],
-                input_css_path=args.input_css_path,
-                config_js_path=args.config_js_path,
-                download_node=args.download_node,
-                node_version=args.node_version,
-                tailwind_theme_config=theme_config,
-            )
-        elif args.command == 'build':
-            self.build_tailwindcss(
-                content_path=args.content_path if args.content_path else ['**/*.py'],
-                input_css_path=args.input_css_path,
-                output_css_path=args.output_css_path,
-                config_js_path=args.config_js_path,
-                clean_after=args.clean_after,
-                download_node=args.download_node,
-                node_version=args.node_version,
-                tailwind_theme_config=theme_config,
-            )
-        elif args.command == 'watch':
-            self.watch_tailwindcss(
-                content_path=args.content_path if args.content_path else ['**/*.py'],
-                input_css_path=args.input_css_path,
-                output_css_path=args.output_css_path,
-                config_js_path=args.config_js_path,
-                download_node=args.download_node,
-                node_version=args.node_version,
-                tailwind_theme_config=theme_config,
-            )
-        elif args.command == 'clean':
-            clean_generated_files(
-                input_css_path=args.input_css_path,
-                config_js_path=args.config_js_path,
-                is_cli=True,
-            )
+        node_manager = NodeManager(
+            download_node=args.download_node,
+            node_version=args.node_version,
+            is_cli=True,
+        )
+        self.tailwind_command = TailwindCommand(
+            node_path=node_manager.node_path,
+            npm_path=node_manager.npm_path,
+            npx_path=node_manager.npx_path,
+            content_path=args.content_path if args.content_path else ['**/*.py'],
+            input_css_path=args.input_css_path,
+            output_css_path=args.output_css_path,
+            config_js_path=args.config_js_path,
+            is_cli=True,
+            theme_config=theme_config,
+        )
 
-    def init_tailwindcss_config(
-        self,
-        content_path: list,
-        input_css_path: str,
-        config_js_path: str,
-        download_node: bool,
-        node_version: str,
-        tailwind_theme_config: Optional[Dict[Any, Any]] = None,
-    ):
+        if args.command == 'init':
+            self.init_tailwindcss(input_css_path=args.input_css_path, config_js_path=args.config_js_path)
+        elif args.command == 'build':
+            self.build_tailwindcss(clean_after=args.clean_after)
+        elif args.command == 'watch':
+            self.watch_tailwindcss()
+        elif args.command == 'clean':
+            self.clean_tailwindcss()
+
+    def init_tailwindcss(self, input_css_path: str, config_js_path: str):
         """
         Initialize a new Tailwind config file
 
         Args:
-            content_path (list): Glob patterns for files to scan for Tailwind classes
             input_css_path (str): Path to input CSS file
             config_js_path (str): Path to the Tailwind config file
-            download_node (bool): Whether to download Node.js if not found in PATH
-            node_version (str): Node.js version to download (if download_node is True)
-            tailwind_theme_config (Optional[Dict[Any, Any]], optional): Custom theme configuration for Tailwind CSS
 
         Returns:
             None
         """
         try:
-            # Check if Node.js is available
-            node_path = check_or_download_nodejs(download_node=download_node, node_version=node_version, is_cli=True)
-
-            # Install Tailwind CSS if not already installed
-            print('Start initializing Tailwind CSS...')
-            install_tailwindcss(node_path)
-
-            # Create default Tailwind config file with custom content
-            print('Creating Tailwind config...')
-            if not os.path.exists(config_js_path):
-                create_default_tailwindcss_config(content_path, config_js_path, tailwind_theme_config)
-
-            # Create default input CSS file
-            if not os.path.exists(input_css_path):
-                create_default_input_tailwindcss(input_css_path)
-
-            print('Tailwind CSS initialized successfully!')
-            print(f'Config file created at: {config_js_path}')
-            print(f'Input CSS file created at: {input_css_path}')
-            print('You can now customize your config file and build CSS with:')
-            print('  dash-tailwindcss-plugin build')
-
-        except subprocess.CalledProcessError as e:
-            warnings.warn(f'Error initializing Tailwind CSS: {e}')
+            self.tailwind_command.init().install()
+            logger.info('📝 Next steps:')
+            logger.info('1. Customize your config file if needed')
+            logger.info('2. Build CSS with:')
+            logger.info('dash-tailwindcss-plugin build')
         except Exception as e:
-            warnings.warn(f'Error: {e}')
+            logger.error(f'Error initializing Tailwind CSS: {e}')
 
-    def build_tailwindcss(
-        self,
-        content_path: list,
-        input_css_path: str,
-        output_css_path: str,
-        config_js_path: str,
-        clean_after: bool,
-        download_node: bool,
-        node_version: str,
-        tailwind_theme_config: Optional[Dict[Any, Any]] = None,
-    ):
+    def build_tailwindcss(self, clean_after: bool):
         """
         Build Tailwind CSS
 
         Args:
-            content_path (list): Glob patterns for files to scan for Tailwind classes
-            input_css_path (str): Path to input CSS file
-            output_css_path (str): Path to the output CSS file
-            config_js_path (str): Path to the Tailwind config file
             clean_after (bool): Whether to clean up generated files after build
-            download_node (bool): Whether to download Node.js if not found in PATH
-            node_version (str): Node.js version to download (if download_node is True)
-            tailwind_theme_config (Optional[Dict[Any, Any]], optional): Custom theme configuration for Tailwind CSS
 
         Returns:
             None
         """
         try:
-            # Check if Node.js is available or download it if requested
-            node_path = check_or_download_nodejs(download_node=download_node, node_version=node_version, is_cli=True)
-
-            # Check if Tailwind CSS is installed
-            print('Start initializing Tailwind CSS...')
-            install_tailwindcss(node_path)
-
-            # Check and create config file if it doesn't exist
-            if not os.path.exists(config_js_path):
-                print(f'Config file {config_js_path} not found. Creating default config...')
-                create_default_tailwindcss_config(content_path, config_js_path, tailwind_theme_config)
-                print(f'Default config file created at: {config_js_path}')
-
-            # Check and create input CSS file if it doesn't exist
-            if not os.path.exists(input_css_path):
-                print(f'Input CSS file {input_css_path} not found. Creating default input CSS...')
-                create_default_input_tailwindcss(input_css_path)
-                print(f'Default input CSS file created at: {input_css_path}')
-
-            # Build CSS
-            print(f'Building Tailwind CSS from {input_css_path} to {output_css_path}...')
-            cmd = get_build_tailwind_cmd(node_path, input_css_path, output_css_path, config_js_path)
-            result = subprocess.run(cmd, capture_output=True, text=True)
-            if result.returncode != 0:
-                warnings.warn(f'Tailwind CSS build failed: {result.stderr}')
-            else:
-                print('Build completed successfully!')
-                print(f'Tailwind CSS built successfully to {output_css_path}')
-
+            built = self.tailwind_command.init().install().build()
             # Clean up if requested
             if clean_after:
-                clean_generated_files(
-                    input_css_path=input_css_path,
-                    config_js_path=config_js_path,
-                    is_cli=True,
-                )
-
-        except subprocess.CalledProcessError as e:
-            warnings.warn(f'Error building Tailwind CSS: {e}')
+                built.clean()
         except Exception as e:
-            warnings.warn(f'Error: {e}')
+            logger.error(f'Error: {e}')
 
-    def watch_tailwindcss(
-        self,
-        content_path: list,
-        input_css_path: str,
-        output_css_path: str,
-        config_js_path: str,
-        download_node: bool,
-        node_version: str,
-        tailwind_theme_config: Optional[Dict[Any, Any]] = None,
-    ):
+    def watch_tailwindcss(self):
         """
         Watch for changes and rebuild Tailwind CSS
 
-        Args:
-            content_path (list): Glob patterns for files to scan for Tailwind classes
-            input_css_path (str): Path to input CSS file
-            output_css_path (str): Path to the output CSS file
-            config_js_path (str): Path to the Tailwind config file
-            download_node (bool): Whether to download Node.js if not found in PATH
-            node_version (str): Node.js version to download (if download_node is True)
-            tailwind_theme_config (Optional[Dict[Any, Any]], optional): Custom theme configuration for Tailwind CSS
+        Returns:
+            None
+        """
+        try:
+            self.tailwind_command.init().install().watch()
+
+        except Exception as e:
+            logger.error(f'Error watching Tailwind CSS: {e}')
+
+    def clean_tailwindcss(self):
+        """
+        Clean up generated files
 
         Returns:
             None
         """
         try:
-            # Check if Node.js is available or download it if requested
-            node_path = check_or_download_nodejs(download_node=download_node, node_version=node_version, is_cli=True)
-
-            # Check if Tailwind CSS is installed
-            install_tailwindcss(node_path)
-
-            # Check and create config file if it doesn't exist
-            if not os.path.exists(config_js_path):
-                print(f'Config file {config_js_path} not found. Creating default config...')
-                create_default_tailwindcss_config(content_path, config_js_path, tailwind_theme_config)
-                print(f'Default config file created at: {config_js_path}')
-
-            # Check and create input CSS file if it doesn't exist
-            if not os.path.exists(input_css_path):
-                print(f'Input CSS file {input_css_path} not found. Creating default input CSS...')
-                create_default_input_tailwindcss(input_css_path)
-                print(f'Default input CSS file created at: {input_css_path}')
-
-            # Watch and build CSS
-            print(f'Watching {input_css_path} for changes...')
-            if node_path:
-                # When using downloaded Node.js, we need to use npx from the same directory
-                node_dir = os.path.dirname(node_path)
-                npx_path = os.path.join(node_dir, get_command_alias_by_platform('npx'))
-                # If npx doesn't exist in the same directory, check in bin subdirectory
-                if not os.path.exists(npx_path):
-                    npx_path = os.path.join(node_dir, 'bin', get_command_alias_by_platform('npx'))
-
-                # If we found npx, use it with node, otherwise fallback to just npx
-                if os.path.exists(npx_path):
-                    cmd = [
-                        npx_path,
-                        'tailwindcss',
-                        '-i',
-                        input_css_path,
-                        '-o',
-                        output_css_path,
-                        '-c',
-                        config_js_path,
-                        '--watch',
-                    ]
-                else:
-                    cmd = [
-                        node_path,
-                        get_command_alias_by_platform('npx'),
-                        'tailwindcss',
-                        '-i',
-                        input_css_path,
-                        '-o',
-                        output_css_path,
-                        '-c',
-                        config_js_path,
-                        '--watch',
-                    ]
-            else:
-                cmd = [
-                    get_command_alias_by_platform('npx'),
-                    'tailwindcss',
-                    '-i',
-                    input_css_path,
-                    '-o',
-                    output_css_path,
-                    '-c',
-                    config_js_path,
-                    '--watch',
-                ]
-            subprocess.run(cmd)
-
-        except KeyboardInterrupt:
-            print('\nWatch stopped.')
-        except subprocess.CalledProcessError as e:
-            warnings.warn(f'Error watching Tailwind CSS: {e}')
+            self.tailwind_command.clean()
         except Exception as e:
-            warnings.warn(f'Error: {e}')
+            logger.error(f'Error cleaning Tailwind CSS: {e}')
 
 
 def main():

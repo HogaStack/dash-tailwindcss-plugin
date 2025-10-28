@@ -39,15 +39,11 @@ class TestTailwindCLI:
         mock_parse_args.return_value = mock_args
 
         cli = _TailwindCLI()
-        with patch.object(cli, 'init_tailwindcss_config') as mock_init:
+        with patch.object(cli, 'init_tailwindcss') as mock_init:
             cli.run()
             mock_init.assert_called_once_with(
-                content_path=['**/*.py'],
                 input_css_path='./.tailwind/tailwind_input.css',
-                config_js_path='./.tailwind/tailwind.config.js',
-                download_node=False,
-                node_version='18.17.0',
-                tailwind_theme_config=None,
+                config_js_path='./.tailwind/tailwind.config.js'
             )
 
     @patch('argparse.ArgumentParser.parse_args')
@@ -69,14 +65,7 @@ class TestTailwindCLI:
         with patch.object(cli, 'build_tailwindcss') as mock_build:
             cli.run()
             mock_build.assert_called_once_with(
-                content_path=['**/*.py'],
-                input_css_path='./.tailwind/tailwind_input.css',
-                output_css_path='./.tailwind/tailwind.css',
-                config_js_path='./.tailwind/tailwind.config.js',
-                clean_after=False,
-                download_node=False,
-                node_version='18.17.0',
-                tailwind_theme_config=None,
+                clean_after=False
             )
 
     @patch('argparse.ArgumentParser.parse_args')
@@ -96,15 +85,7 @@ class TestTailwindCLI:
         cli = _TailwindCLI()
         with patch.object(cli, 'watch_tailwindcss') as mock_watch:
             cli.run()
-            mock_watch.assert_called_once_with(
-                content_path=['**/*.py'],
-                input_css_path='./.tailwind/tailwind_input.css',
-                output_css_path='./.tailwind/tailwind.css',
-                config_js_path='./.tailwind/tailwind.config.js',
-                download_node=False,
-                node_version='18.17.0',
-                tailwind_theme_config=None,
-            )
+            mock_watch.assert_called_once()
 
     @patch('argparse.ArgumentParser.parse_args')
     def test_run_with_clean_command(self, mock_parse_args):
@@ -117,13 +98,9 @@ class TestTailwindCLI:
         mock_parse_args.return_value = mock_args
 
         cli = _TailwindCLI()
-        with patch('dash_tailwindcss_plugin.cli.clean_generated_files') as mock_clean:
+        with patch.object(cli, 'clean_tailwindcss') as mock_clean:
             cli.run()
-            mock_clean.assert_called_once_with(
-                input_css_path='./.tailwind/tailwind_input.css',
-                config_js_path='./.tailwind/tailwind.config.js',
-                is_cli=True,
-            )
+            mock_clean.assert_called_once()
 
     @patch('argparse.ArgumentParser.parse_args')
     def test_run_with_theme_config(self, mock_parse_args):
@@ -140,15 +117,11 @@ class TestTailwindCLI:
         mock_parse_args.return_value = mock_args
 
         cli = _TailwindCLI()
-        with patch.object(cli, 'init_tailwindcss_config') as mock_init:
+        with patch.object(cli, 'init_tailwindcss') as mock_init:
             cli.run()
             mock_init.assert_called_once_with(
-                content_path=['**/*.py'],
                 input_css_path='./.tailwind/tailwind_input.css',
-                config_js_path='./.tailwind/tailwind.config.js',
-                download_node=False,
-                node_version='18.17.0',
-                tailwind_theme_config={'colors': {'primary': '#ff0000'}},
+                config_js_path='./.tailwind/tailwind.config.js'
             )
 
     @patch('argparse.ArgumentParser.parse_args')
@@ -166,15 +139,11 @@ class TestTailwindCLI:
         mock_parse_args.return_value = mock_args
 
         cli = _TailwindCLI()
-        with patch.object(cli, 'init_tailwindcss_config') as mock_init:
+        with patch.object(cli, 'init_tailwindcss') as mock_init:
             cli.run()
             mock_init.assert_called_once_with(
-                content_path=['**/*.py'],
                 input_css_path='./.tailwind/tailwind_input.css',
-                config_js_path='./.tailwind/tailwind.config.js',
-                download_node=False,
-                node_version='18.17.0',
-                tailwind_theme_config=None,
+                config_js_path='./.tailwind/tailwind.config.js'
             )
 
 
