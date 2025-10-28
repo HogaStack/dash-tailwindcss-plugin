@@ -7,7 +7,7 @@ from typing_extensions import Self
 import urllib.request
 import logging
 import zipfile
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 
 # Custom log formatter to add colors for different log levels
@@ -323,6 +323,7 @@ class TailwindCommand:
         node_path: Optional[str],
         npm_path: str,
         npx_path: str,
+        tailwind_version: Literal['3', '4'],
         content_path: List[str],
         input_css_path: str,
         output_css_path: str,
@@ -337,6 +338,7 @@ class TailwindCommand:
             node_path (Optional[str]): Path to Node.js executable
             npm_path (str): Path to npm executable
             npx_path (str): Path to npx executable
+            tailwind_version (Literal['3', '4']): Version of Tailwind CSS
             content_path (List[str]): List of paths to content files
             input_css_path (str): Path to input CSS file
             output_css_path (str): Path to output CSS file
@@ -347,6 +349,7 @@ class TailwindCommand:
         self.node_path = node_path
         self.npm_path = npm_path
         self.npx_path = npx_path
+        self.tailwind_version = tailwind_version
         self.content_path = content_path
         self.input_css_path = input_css_path
         self.output_css_path = output_css_path
@@ -366,10 +369,13 @@ class TailwindCommand:
         if assets_dir and not os.path.exists(assets_dir):
             os.makedirs(assets_dir)
 
-        input_css_content = """@tailwind base;
+        if self.tailwind_version == '3':
+            input_css_content = """@tailwind base;
 @tailwind components;
 @tailwind utilities;
 """
+        else:
+            input_css_content = """@import "tailwindcss";"""
         with open(self.input_css_path, 'w') as f:
             f.write(input_css_content)
 
@@ -410,6 +416,32 @@ class TailwindCommand:
         with open(self.config_js_path, 'w') as f:
             f.write(config_content)
 
+    @property
+    def _tailwind_cli(self) -> Literal['tailwindcss', '@tailwindcss/cli']:
+        """
+        Get the name of the Tailwind CSS command to use
+
+        Returns:
+            Literal['tailwindcss', '@tailwindcss/cli']: Name of the Tailwind CSS command to use
+        """
+        if self.tailwind_version == '3':
+            return 'tailwindcss'
+        else:
+            return '@tailwindcss/cli'
+
+    @property
+    def _tailwind_package(self) -> List[str]:
+        """
+        Get the name of the Tailwind CSS package to use
+
+        Returns:
+            List[str]: Name of the Tailwind CSS package to use
+        """
+        if self.tailwind_version == '3':
+            return ['tailwindcss@3']
+        else:
+            return ['tailwindcss', '@tailwindcss/cli']
+
     def _check_npm_init(self) -> bool:
         """
         Check if npm init has been run
@@ -426,22 +458,17 @@ class TailwindCommand:
         Returns:
             bool: True if Tailwind CSS is installed, False otherwise
         """
-        if self.node_path:
-            # If we found npx, use it with node, otherwise fallback to just npx
-            if os.path.exists(self.npx_path):
-                cmd = [self.npx_path, 'tailwindcss', '--help']
-            else:
-                cmd = [
-                    self.node_path,
-                    self.npx_path,
-                    'tailwindcss',
-                    '--help',
-                ]
+        # If we found npx, use it with node, otherwise fallback to just npx
+        if self.node_path and not os.path.exists(self.npx_path):
+            cmd = [
+                self.node_path,
+                self.npx_path,
+                f'{self._tailwind_cli} --help',
+            ]
         else:
-            cmd = [self.npx_path, 'tailwindcss', '--help']
+            cmd = [self.npx_path, f'{self._tailwind_cli} --help']
 
         result = subprocess.run(cmd, capture_output=True, text=True)
-
         return result.returncode == 0
 
     def init(self) -> Self:
@@ -456,28 +483,28 @@ class TailwindCommand:
             # Create default config if it doesn't exist
             if self.is_cli:
                 logger.info('📄 Creating input CSS file...')
-            
+
             if not os.path.exists(self.input_css_path):
                 if self.is_cli:
                     logger.info(
                         f'🔍 Input CSS file {self.input_css_path} not found. Creating default input CSS file...'
                     )
-                
+
                 self.create_default_input_tailwindcss()
-                
+
                 if self.is_cli:
                     logger.info(f'💾 Default input CSS file created at: {self.input_css_path}')
 
             # Create default input Tailwind CSS file if it doesn't exist
             if self.is_cli:
                 logger.info('⚙️ Creating Tailwind config...')
-            
+
             if not os.path.exists(self.config_js_path):
                 if self.is_cli:
                     logger.info(f'🔍 Config file {self.config_js_path} not found. Creating default config file...')
-                
+
                 self.create_default_tailwindcss_config()
-                
+
                 if self.is_cli:
                     logger.info(f'💾 Default config file created at: {self.config_js_path}')
 
@@ -496,9 +523,9 @@ class TailwindCommand:
                 if result.returncode != 0:
                     logger.error(f'❌ Error initializing Tailwind CSS: {result.stderr}')
                     return self
-            
+
             logger.info('✅ Tailwind CSS initialized successfully!')
-        
+
         except Exception as e:
             logger.error(f'❌ Error initializing Tailwind CSS: {e}')
 
@@ -521,22 +548,22 @@ class TailwindCommand:
                         self.npm_path,
                         'install',
                         '-D',
-                        'tailwindcss@3',
+                        *self._tailwind_package,
                     ]
                 else:
                     install_cmd = [
                         self.npm_path,
                         'install',
                         '-D',
-                        'tailwindcss@3',
+                        *self._tailwind_package,
                     ]
                 result = subprocess.run(install_cmd, capture_output=True, text=True)
                 if result.returncode != 0:
                     logger.error(f'❌ Error installing Tailwind CSS: {result.stderr}')
                     return self
-            
+
             logger.info('✅ Tailwind CSS installed successfully!')
-        
+
         except Exception as e:
             logger.error(f'❌ Error installing Tailwind CSS: {e}')
 
@@ -556,7 +583,7 @@ class TailwindCommand:
                 build_cmd = [
                     self.node_path,
                     self.npx_path,
-                    'tailwindcss',
+                    self._tailwind_cli,
                     '-i',
                     self.input_css_path,
                     '-o',
@@ -567,7 +594,7 @@ class TailwindCommand:
             else:
                 build_cmd: list[str] = [
                     self.npx_path,
-                    'tailwindcss',
+                    self._tailwind_cli,
                     '-i',
                     self.input_css_path,
                     '-o',
@@ -584,7 +611,7 @@ class TailwindCommand:
 
             logger.info('✅ Build completed successfully!')
             logger.info(f'🎨 Tailwind CSS built successfully to {self.output_css_path}')
-        
+
         except Exception as e:
             logger.error(f'❌ Error building Tailwind CSS: {e}')
 
@@ -604,7 +631,7 @@ class TailwindCommand:
                 watch_cmd = [
                     self.node_path,
                     self.npx_path,
-                    'tailwindcss',
+                    self._tailwind_cli,
                     '-i',
                     self.input_css_path,
                     '-o',
@@ -616,7 +643,7 @@ class TailwindCommand:
             else:
                 watch_cmd = [
                     self.npx_path,
-                    'tailwindcss',
+                    self._tailwind_cli,
                     '-i',
                     self.input_css_path,
                     '-o',
@@ -626,10 +653,10 @@ class TailwindCommand:
                     '--watch',
                 ]
             subprocess.run(watch_cmd)
-        
+
         except KeyboardInterrupt:
             logger.info('👋 Watch stopped.')
-        
+
         except Exception as e:
             logger.error(f'❌ Error watching for changes: {e}')
 

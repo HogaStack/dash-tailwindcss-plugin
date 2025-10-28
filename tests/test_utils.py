@@ -57,17 +57,18 @@ class TestUtils:
         """Test create_default_tailwindcss_config method."""
         config_path = 'test.config.js'
         content_path = ['*.html', '*.js']
-        
+
         # Create a TailwindCommand instance to access the method
         tailwind_command = TailwindCommand(
             node_path=None,
             npm_path='npm',
             npx_path='npx',
+            tailwind_version='3',
             content_path=content_path,
             input_css_path='input.css',
             output_css_path='output.css',
             config_js_path=config_path,
-            is_cli=False
+            is_cli=False,
         )
 
         tailwind_command.create_default_tailwindcss_config()
@@ -87,18 +88,19 @@ class TestUtils:
         config_path = 'test.config.js'
         content_path = ['*.html']
         theme_config = {'colors': {'primary': '#ff0000'}}
-        
+
         # Create a TailwindCommand instance to access the method
         tailwind_command = TailwindCommand(
             node_path=None,
             npm_path='npm',
             npx_path='npx',
+            tailwind_version='3',
             content_path=content_path,
             input_css_path='input.css',
             output_css_path='output.css',
             config_js_path=config_path,
             is_cli=False,
-            theme_config=theme_config
+            theme_config=theme_config,
         )
 
         tailwind_command.create_default_tailwindcss_config()
@@ -115,17 +117,18 @@ class TestUtils:
     def test_create_default_input_tailwindcss(self):
         """Test create_default_input_tailwindcss method."""
         input_css_path = 'test_input.css'
-        
+
         # Create a TailwindCommand instance to access the method
         tailwind_command = TailwindCommand(
             node_path=None,
             npm_path='npm',
             npx_path='npx',
+            tailwind_version='3',
             content_path=['*.html'],
             input_css_path=input_css_path,
             output_css_path='output.css',
             config_js_path='config.js',
-            is_cli=False
+            is_cli=False,
         )
 
         tailwind_command.create_default_input_tailwindcss()
@@ -145,17 +148,18 @@ class TestUtils:
         config_dir = 'config'
         config_path = os.path.join(config_dir, 'test.config.js')
         content_path = ['*.html']
-        
+
         # Create a TailwindCommand instance to access the method
         tailwind_command = TailwindCommand(
             node_path=None,
             npm_path='npm',
             npx_path='npx',
+            tailwind_version='3',
             content_path=content_path,
             input_css_path='input.css',
             output_css_path='output.css',
             config_js_path=config_path,
-            is_cli=False
+            is_cli=False,
         )
 
         tailwind_command.create_default_tailwindcss_config()
@@ -168,17 +172,18 @@ class TestUtils:
         """Test that create_default_input_tailwindcss creates directory if it doesn't exist."""
         css_dir = 'assets'
         input_css_path = os.path.join(css_dir, 'test_input.css')
-        
+
         # Create a TailwindCommand instance to access the method
         tailwind_command = TailwindCommand(
             node_path=None,
             npm_path='npm',
             npx_path='npx',
+            tailwind_version='3',
             content_path=['*.html'],
             input_css_path=input_css_path,
             output_css_path='output.css',
             config_js_path='config.js',
-            is_cli=False
+            is_cli=False,
         )
 
         tailwind_command.create_default_input_tailwindcss()
@@ -190,7 +195,7 @@ class TestUtils:
     def test_get_command_alias_by_platform(self):
         """Test get_command_alias_by_platform method."""
         node_manager = NodeManager(download_node=False, node_version='18.17.0')
-        
+
         # Test with Windows
         with patch('platform.system', return_value='Windows'):
             result = node_manager.get_command_alias_by_platform('npx')
@@ -204,7 +209,7 @@ class TestUtils:
     def test_check_nodejs_available(self):
         """Test check_nodejs_available method."""
         node_manager = NodeManager(download_node=False, node_version='18.17.0')
-        
+
         # Mock subprocess.run to return a successful result
         mock_result = Mock()
         mock_result.returncode = 0
@@ -217,7 +222,7 @@ class TestUtils:
     def test_check_nodejs_available_not_found(self):
         """Test check_nodejs_available when Node.js is not found."""
         node_manager = NodeManager(download_node=False, node_version='18.17.0')
-        
+
         with patch('subprocess.run', side_effect=FileNotFoundError()):
             is_available, version = node_manager.check_nodejs_available()
             assert is_available is False

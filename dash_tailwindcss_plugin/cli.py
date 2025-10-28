@@ -28,6 +28,12 @@ class _TailwindCLI:
             help='Command to execute',
         )
         parser.add_argument(
+            '--tailwind-version',
+            type=str,
+            default='3',
+            help='Version of Tailwind CSS to use',
+        )
+        parser.add_argument(
             '--content-path',
             action='append',
             help='Glob pattern for files to scan for Tailwind classes. Can be specified multiple times.',
@@ -88,6 +94,7 @@ class _TailwindCLI:
             node_path=node_manager.node_path,
             npm_path=node_manager.npm_path,
             npx_path=node_manager.npx_path,
+            tailwind_version=args.tailwind_version,
             content_path=args.content_path if args.content_path else ['**/*.py'],
             input_css_path=args.input_css_path,
             output_css_path=args.output_css_path,

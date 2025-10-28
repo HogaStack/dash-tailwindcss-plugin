@@ -12,6 +12,7 @@ class _TailwindCSSPlugin:
     def __init__(
         self,
         mode: Literal['offline', 'online'] = 'offline',
+        tailwind_version: Literal['3', '4'] = '3',
         content_path: List[str] = ['**/*.py'],
         input_css_path: str = '.tailwind/tailwind_input.css',
         output_css_path: str = '.tailwind/tailwind.css',
@@ -29,11 +30,12 @@ class _TailwindCSSPlugin:
 
         Args:
             mode (Literal['offline', 'online']): Mode of operation ('offline' or 'online')
+            tailwind_version (Literal['3', '4']): Version of Tailwind CSS
             content_path (List[str]): Glob patterns for files to scan for Tailwind classes
             input_css_path (str): Path to input CSS file
             output_css_path (str): Path to output CSS file
             config_js_path (str): Path to Tailwind config file
-            cdn_url (str): CDN URL for online mode
+            cdn_url (str): CDN URL for online mode, need to correspond with tailwind_version
             download_node (bool): Whether to download Node.js if not found
             node_version (str): Node.js version to download if download_node is True
             tailwind_theme_config (Optional[Dict[Any, Any]]): Custom theme configuration for Tailwind CSS
@@ -41,23 +43,26 @@ class _TailwindCSSPlugin:
             skip_build_if_recent (bool): Whether to skip build if CSS file was recently generated
             skip_build_time_threshold (int): Time threshold in seconds to consider CSS file as recent
         """
-        node_manager = NodeManager(
-            download_node=download_node,
-            node_version=node_version,
-            is_cli=False,
-        )
-        self.tailwind_command = TailwindCommand(
-            node_path=node_manager.node_path,
-            npm_path=node_manager.npm_path,
-            npx_path=node_manager.npx_path,
-            content_path=content_path,
-            input_css_path=input_css_path,
-            output_css_path=output_css_path,
-            config_js_path=config_js_path,
-            is_cli=False,
-            theme_config=tailwind_theme_config,
-        )
+        if mode == 'offline':
+            node_manager = NodeManager(
+                download_node=download_node,
+                node_version=node_version,
+                is_cli=False,
+            )
+            self.tailwind_command = TailwindCommand(
+                node_path=node_manager.node_path,
+                npm_path=node_manager.npm_path,
+                npx_path=node_manager.npx_path,
+                tailwind_version=tailwind_version,
+                content_path=content_path,
+                input_css_path=input_css_path,
+                output_css_path=output_css_path,
+                config_js_path=config_js_path,
+                is_cli=False,
+                theme_config=tailwind_theme_config,
+            )
         self.mode = mode
+        self.tailwind_version = tailwind_version
         self.content_path = content_path
         self.input_css_path = input_css_path
         self.output_css_path = output_css_path
@@ -69,6 +74,12 @@ class _TailwindCSSPlugin:
         self.clean_after = clean_after
         self.skip_build_if_recent = skip_build_if_recent
         self.skip_build_time_threshold = skip_build_time_threshold
+        if mode == 'online' and tailwind_version == '4' and cdn_url == 'https://cdn.tailwindcss.com':
+            new_cdn_url = 'https://registry.npmmirror.com/@tailwindcss/browser/4/files/dist/index.global.js'
+            logger.warning(
+                f'{cdn_url} does not support tailwindcss 4.x version and has been replaced with {new_cdn_url} by default. Or provide a new cdn_url that supports version 4.x.'
+            )
+            self.cdn_url = new_cdn_url
 
     def setup_online_mode(self):
         """
@@ -190,6 +201,7 @@ class _TailwindCSSPlugin:
 
 def setup_tailwindcss_plugin(
     mode: Literal['online', 'offline'] = 'offline',
+    tailwind_version: Literal['3', '4'] = '3',
     content_path: List[str] = ['**/*.py'],
     input_css_path: str = '.tailwind/tailwind_input.css',
     output_css_path: str = '.tailwind/tailwind.css',
@@ -207,11 +219,12 @@ def setup_tailwindcss_plugin(
 
     Args:
         mode (Literal['online', 'offline']): Mode of operation ('offline' or 'online')
+        tailwind_version (Literal['3', '4']): Version of Tailwind CSS
         content_path (List[str]): Glob patterns for files to scan for Tailwind classes
         input_css_path (str): Path to input CSS file
         output_css_path (str): Path to output CSS file
         config_js_path (str): Path to Tailwind config file
-        cdn_url (str): CDN URL for online mode
+        cdn_url (str): CDN URL for online mode, need to correspond with tailwind_version
         download_node (bool): Whether to download Node.js if not found
         node_version (str): Node.js version to download if download_node is True
         tailwind_theme_config (Optional[Dict[Any, Any]]): Custom theme configuration for Tailwind CSS
@@ -221,6 +234,7 @@ def setup_tailwindcss_plugin(
     """
     plugin = _TailwindCSSPlugin(
         mode=mode,
+        tailwind_version=tailwind_version,
         content_path=content_path,
         input_css_path=input_css_path,
         output_css_path=output_css_path,
