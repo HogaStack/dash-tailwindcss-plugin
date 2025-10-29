@@ -78,7 +78,8 @@ class _TailwindCSSPlugin:
         if mode == 'online' and tailwind_version == '4' and cdn_url == 'https://cdn.tailwindcss.com':
             new_cdn_url = 'https://registry.npmmirror.com/@tailwindcss/browser/4/files/dist/index.global.js'
             logger.warning(
-                f'{cdn_url} does not support tailwindcss 4.x version and has been replaced with {new_cdn_url} by default. Or provide a new cdn_url that supports version 4.x.'
+                f'⚠️ Warning: {cdn_url} does not support tailwindcss 4.x version and has been replaced with {new_cdn_url} by default. '
+                f'Or provide a new cdn_url that supports version 4.x.'
             )
             self.cdn_url = new_cdn_url
 
