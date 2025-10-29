@@ -1,5 +1,6 @@
 import os
 import time
+import uuid
 from dash import Dash, hooks
 from flask import Response, send_file
 from typing import Any, Dict, List, Literal, Optional
@@ -129,7 +130,8 @@ class _TailwindCSSPlugin:
         Returns:
             None
         """
-        built_tailwindcss_link = '/_tailwind/tailwind.css'
+        built_tailwindcss_vesrion = str(uuid.uuid4()).replace('-', '')
+        built_tailwindcss_link = f'/_tailwind/tailwind@{built_tailwindcss_vesrion}.css'
         # Ensure output directory exists
         output_dir = os.path.dirname(self.output_css_path)
         if output_dir and not os.path.exists(output_dir):
