@@ -1,6 +1,10 @@
 # Dash TailwindCSS Plugin
 
-A plugin for integrating TailwindCSS with Plotly Dash applications using Dash 3.x hooks.
+[![GitHub](https://shields.io/badge/license-MIT-informational)](https://github.com/HogaStack/dash-tailwindcss-plugin/blob/main/LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/dash-tailwindcss-plugin.svg?color=dark-green)](https://pypi.org/project/dash-tailwindcss-plugin/)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+
+A plugin for integrating TailwindCSS with Plotly Dash applications using Dash 3.x hooks. Supports both Tailwind CSS v3 and v4.
 
 ## Features
 
@@ -14,6 +18,7 @@ A plugin for integrating TailwindCSS with Plotly Dash applications using Dash 3.
 8. **Comprehensive Testing**: Full test coverage including unit tests, integration tests, and Dash-specific tests
 9. **Custom Theme Configuration**: Extend Tailwind's default theme with custom colors, spacing, and more
 10. **Configurable Cleanup**: Control whether intermediate files are cleaned up after build
+11. **Tailwind CSS v3 & v4 Support**: Supports both Tailwind CSS version 3 and 4
 
 ## Installation
 
@@ -47,8 +52,11 @@ pip install -e .[dev,test]
 from dash import Dash, html
 from dash_tailwindcss_plugin import setup_tailwindcss_plugin
 
-# Initialize with CDN mode
+# Initialize with CDN mode (default is Tailwind CSS v3)
 setup_tailwindcss_plugin(mode="online")
+
+# Or specify Tailwind CSS version (v3 or v4)
+# setup_tailwindcss_plugin(mode="online", tailwind_version="4")
 
 app = Dash(__name__)
 app.layout = html.Div([
@@ -69,6 +77,7 @@ from dash_tailwindcss_plugin import setup_tailwindcss_plugin
 # Initialize with offline mode (default)
 setup_tailwindcss_plugin(
     mode="offline",
+    tailwind_version="3",  # Specify Tailwind CSS version (v3 or v4)
     content_path=["**/*.py"],  # Files to scan for Tailwind classes
     output_css_path=".tailwind/tailwind.css",  # Output CSS file
     config_js_path=".tailwind/tailwind.config.js",  # Tailwind config file
@@ -165,7 +174,7 @@ if __name__ == "__main__":
 
 ## Project Structure
 
-```
+```bash
 dash-tailwindcss-plugin/
 ├── dash_tailwindcss_plugin/
 │   ├── __init__.py          # Exports main plugin function
@@ -200,11 +209,14 @@ application
 ## How It Works
 
 ### Online Mode
+
 - Adds Tailwind CSS CDN script to the app's HTML head using `hooks.index()`
 - No build process required
 - Larger CSS file (includes all Tailwind classes)
+- Supports both Tailwind CSS v3 (default CDN: <https://cdn.tailwindcss.com>) and v4 (default CDN: <https://registry.npmmirror.com/@tailwindcss/browser/4/files/dist/index.global.js>)
 
 ### Offline Mode
+
 - Uses `hooks.setup(priority=3)` to build Tailwind CSS on app startup
 - Uses `hooks.route(name=built_tailwindcss_link, methods=('GET',), priority=2)` to serve the generated CSS file
 - Uses `hooks.index(priority=1)` to inject the CSS link into the HTML head
@@ -213,17 +225,19 @@ application
 - Automatically downloads Node.js if requested and not found in PATH
 - Automatically cleans up temporary files after build (unless disabled)
 - **Smart Rebuild**: Skips rebuilding if CSS file was generated within the last 5 seconds
+- Supports both Tailwind CSS v3 and v4 with appropriate CLI packages
 
 ## Configuration
 
 The plugin accepts the following parameters:
 
 - `mode`: "online" or "offline" (default: "offline")
+- `tailwind_version`: "3" or "4" (default: "3")
 - `content_path`: Glob patterns for files to scan (default: ["**/*.py"])
 - `input_css_path`: Path to input CSS file (default: ".tailwind/tailwind_input.css")
 - `output_css_path`: Path to output CSS file (default: ".tailwind/tailwind.css")
 - `config_js_path`: Path to Tailwind config file (default: ".tailwind/tailwind.config.js")
-- `cdn_url`: CDN URL for online mode (default: "https://cdn.tailwindcss.com")
+- `cdn_url`: CDN URL for online mode (default: "<https://cdn.tailwindcss.com>")
 - `download_node`: Whether to download Node.js if not found (default: False)
 - `node_version`: Node.js version to download if download_node is True (default: "18.17.0")
 - `tailwind_theme_config`: Dictionary of custom theme configuration for Tailwind CSS (default: None)
@@ -307,30 +321,39 @@ dash-tailwindcss-plugin clean             # Clean up generated files
 ### CLI Options
 
 All commands support the following options:
-- `--content-path INPUT`: Glob pattern for files to scan for Tailwind classes. Can be specified multiple times. (default: ["**/*.py"])
-- `--input-css-path PATH`: Path to input CSS file (default: "./.tailwind/tailwind_input.css") 
-- `--output-css-path OUTPUT`: Path to output CSS file (default: "./.tailwind/tailwind.config.js")
-- `--config-js-path CONFIG`: Path to Tailwind config file (default: "./.tailwind/tailwind.css")
-- `--tailwind-theme-config JSON`: JSON string of custom theme configuration for Tailwind CSS
 
-For the `build` command, you can also use:
-- `--clean-after`: Clean up generated files after build
+- `--tailwind-version VERSION`: Version of Tailwind CSS to use (3 or 4) (default: "3")
+- `--content-path INPUT`: Glob pattern for files to scan for Tailwind classes. Can be specified multiple times. (default: ["**/*.py"])
+- `--input-css-path PATH`: Path to input CSS file (default: "./.tailwind/tailwind_input.css")
+- `--output-css-path OUTPUT`: Path to output CSS file (default: "./.tailwind/tailwind.css")
+- `--config-js-path CONFIG`: Path to Tailwind config file (default: "./.tailwind/tailwind.config.js")
+- `--tailwind-theme-config JSON`: JSON string of custom theme configuration for Tailwind CSS
 - `--download-node`: Download Node.js if not found in PATH
 - `--node-version VERSION`: Node.js version to download (if --download-node is used)
+- `--clean-after`: Clean up generated files after build (only for build command)
 
 Example:
+
 ```bash
 dash-tailwindcss-plugin build --download-node --node-version 18.17.0
 ```
 
 Example with multiple content paths:
+
 ```bash
-dash-tailwindcss-plugin build --content "**/*.py" --content "**/*.js"
+dash-tailwindcss-plugin build --content-path "**/*.py" --content-path "**/*.js"
 ```
 
 Example with custom theme configuration:
+
 ```bash
 dash-tailwindcss-plugin build --tailwind-theme-config "{\"colors\":{\"brand\":{\"500\":\"#3b82f6\"}}}"
+```
+
+Example with Tailwind CSS v4:
+
+```bash
+dash-tailwindcss-plugin build --tailwind-version 4
 ```
 
 ## Architecture
