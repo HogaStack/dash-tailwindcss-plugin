@@ -124,14 +124,11 @@ class _TailwindCLI:
         Returns:
             None
         """
-        try:
-            self.tailwind_command.init().install()
-            logger.info('📝 Next steps:')
-            logger.info('1. Customize your config file if needed')
-            logger.info('2. Build CSS with:')
-            logger.info('dash-tailwindcss-plugin build')
-        except Exception as e:
-            logger.error(f'Error initializing Tailwind CSS: {e}')
+        self.tailwind_command.init().install()
+        logger.info('📝 Next steps:')
+        logger.info('1. Customize your config file if needed')
+        logger.info('2. Build CSS with:')
+        logger.info('dash-tailwindcss-plugin build')
 
     def build_tailwindcss(self, clean_after: bool):
         """
@@ -143,13 +140,10 @@ class _TailwindCLI:
         Returns:
             None
         """
-        try:
-            built = self.tailwind_command.init().install().build()
-            # Clean up if requested
-            if clean_after:
-                built.clean()
-        except Exception as e:
-            logger.error(f'Error: {e}')
+        built = self.tailwind_command.init().install().build()
+        # Clean up if requested
+        if clean_after:
+            built.clean()
 
     def watch_tailwindcss(self):
         """
@@ -158,11 +152,7 @@ class _TailwindCLI:
         Returns:
             None
         """
-        try:
-            self.tailwind_command.init().install().watch()
-
-        except Exception as e:
-            logger.error(f'Error watching Tailwind CSS: {e}')
+        self.tailwind_command.init().install().watch()
 
     def clean_tailwindcss(self):
         """
@@ -171,10 +161,7 @@ class _TailwindCLI:
         Returns:
             None
         """
-        try:
-            self.tailwind_command.clean()
-        except Exception as e:
-            logger.error(f'Error cleaning Tailwind CSS: {e}')
+        self.tailwind_command.clean()
 
 
 def main():

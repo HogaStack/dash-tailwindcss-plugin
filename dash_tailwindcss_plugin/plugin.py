@@ -195,12 +195,9 @@ class _TailwindCSSPlugin:
         Returns:
             None
         """
-        try:
-            built = self.tailwind_command.init().install().build()
-            if self.clean_after:
-                built.clean()
-        except Exception as e:
-            logger.error(f'❌ Failed to build Tailwind CSS: {e}')
+        built = self.tailwind_command.init().install().build()
+        if self.clean_after:
+            built.clean()
 
 
 def setup_tailwindcss_plugin(

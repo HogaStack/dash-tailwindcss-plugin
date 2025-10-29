@@ -472,9 +472,9 @@ class TailwindCommand:
         Returns:
             bool: True if Tailwind CSS is installed, False otherwise
         """
-        cmd = [self.npx_path, f'{self._tailwind_cli} --help']
+        check_cmd = [self.npx_path, f'{self._tailwind_cli} --help']
 
-        result = subprocess.run(cmd, capture_output=True, text=True, env=self.node_env)
+        result = subprocess.run(check_cmd, capture_output=True, text=True, env=self.node_env)
         return result.returncode == 0
 
     def init(self) -> Self:
@@ -518,13 +518,13 @@ class TailwindCommand:
                 init_cmd = [self.npm_path, 'init', '-y']
                 result = subprocess.run(init_cmd, capture_output=True, text=True, env=self.node_env)
                 if result.returncode != 0:
-                    logger.error(f'❌ Error initializing Tailwind CSS: {result.stderr}')
-                    return self
+                    raise RuntimeError(result.stderr)
 
             logger.info('✅ Tailwind CSS initialized successfully!')
 
         except Exception as e:
             logger.error(f'❌ Error initializing Tailwind CSS: {e}')
+            raise e
 
         return self
 
@@ -546,13 +546,13 @@ class TailwindCommand:
                 ]
                 result = subprocess.run(install_cmd, capture_output=True, text=True, env=self.node_env)
                 if result.returncode != 0:
-                    logger.error(f'❌ Error installing Tailwind CSS: {result.stderr}')
-                    return self
+                    raise RuntimeError(result.stderr)
 
             logger.info('✅ Tailwind CSS installed successfully!')
 
         except Exception as e:
             logger.error(f'❌ Error installing Tailwind CSS: {e}')
+            raise e
 
         return self
 
@@ -579,14 +579,14 @@ class TailwindCommand:
             result = subprocess.run(build_cmd, capture_output=True, text=True, env=self.node_env)
 
             if result.returncode != 0:
-                logger.error(f'❌ Error building Tailwind CSS: {result.stderr}')
-                return self
+                raise RuntimeError(result.stderr)
 
             logger.info('✅ Build completed successfully!')
             logger.info(f'🎨 Tailwind CSS built successfully to {self.output_css_path}')
 
         except Exception as e:
             logger.error(f'❌ Error building Tailwind CSS: {e}')
+            raise e
 
         return self
 
@@ -617,6 +617,7 @@ class TailwindCommand:
 
         except Exception as e:
             logger.error(f'❌ Error watching for changes: {e}')
+            raise e
 
         return self
 
@@ -628,35 +629,40 @@ class TailwindCommand:
             Self: The TailwindCommand instance
         """
         logger.info('🧹 Cleaning up generated files...')
-        files_to_remove = [
-            self.config_js_path,
-            'package.json',
-            'package-lock.json',
-            self.input_css_path,
-        ]
+        try:
+            files_to_remove = [
+                self.config_js_path,
+                'package.json',
+                'package-lock.json',
+                self.input_css_path,
+            ]
 
-        directories_to_remove = ['node_modules']
+            directories_to_remove = ['node_modules']
 
-        # Remove files
-        for file_path in files_to_remove:
-            if os.path.exists(file_path):
-                try:
-                    os.remove(file_path)
-                    if self.is_cli:
-                        logger.info(f'🗑️ Removed {file_path}')
-                except Exception as e:
-                    logger.warning(f'⚠️ Warning: Could not remove {file_path}: {e}')
+            # Remove files
+            for file_path in files_to_remove:
+                if os.path.exists(file_path):
+                    try:
+                        os.remove(file_path)
+                        if self.is_cli:
+                            logger.info(f'🗑️ Removed {file_path}')
+                    except Exception as e:
+                        logger.warning(f'⚠️ Warning: Could not remove {file_path}: {e}')
 
-        # Remove directories
-        for dir_path in directories_to_remove:
-            if os.path.exists(dir_path):
-                try:
-                    shutil.rmtree(dir_path)
-                    if self.is_cli:
-                        logger.info(f'🗑️ Removed {dir_path}')
-                except Exception as e:
-                    logger.warning(f'⚠️ Warning: Could not remove {dir_path}: {e}')
+            # Remove directories
+            for dir_path in directories_to_remove:
+                if os.path.exists(dir_path):
+                    try:
+                        shutil.rmtree(dir_path)
+                        if self.is_cli:
+                            logger.info(f'🗑️ Removed {dir_path}')
+                    except Exception as e:
+                        logger.warning(f'⚠️ Warning: Could not remove {dir_path}: {e}')
 
-        logger.info('✅ Cleanup completed.')
+            logger.info('✅ Cleanup completed.')
+
+        except Exception as e:
+            logger.error(f'❌ Error cleaning up: {e}')
+            raise e
 
         return self
