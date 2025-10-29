@@ -92,6 +92,7 @@ class _TailwindCLI:
         )
         self.tailwind_command = TailwindCommand(
             node_path=node_manager.node_path,
+            node_env=node_manager.node_env,
             npm_path=node_manager.npm_path,
             npx_path=node_manager.npx_path,
             tailwind_version=args.tailwind_version,

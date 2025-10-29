@@ -113,7 +113,10 @@ class NodeManager:
         self.download_node = download_node
         self.node_version = node_version
         self.is_cli = is_cli
-        self.log_init = True
+        self.node_path = self._node_path()
+        self.node_env = self._node_env()
+        self.npm_path = self._npm_path()
+        self.npx_path = self._npx_path()
 
     def check_nodejs_available(self) -> tuple[bool, str]:
         """
@@ -181,9 +184,7 @@ class NodeManager:
 
         # If Node.js already exists, return the path without downloading
         if os.path.exists(node_executable):
-            if self.log_init:
-                self.log_init = False
-                logger.info(f'📦 Using cached Node.js from {node_executable}')
+            logger.info(f'📦 Using cached Node.js from {node_executable}')
             return node_executable
 
         # Download Node.js
@@ -226,9 +227,7 @@ class NodeManager:
         # First check if Node.js is available in PATH
         is_available, version = self.check_nodejs_available()
         if is_available:
-            if self.log_init:
-                self.log_init = False
-                logger.info(f'💻 Using System Default Node.js {version}')
+            logger.info(f'💻 Using System Default Node.js {version}')
 
             return None  # Use system Node.js
 
@@ -262,8 +261,7 @@ class NodeManager:
         else:
             return command
 
-    @property
-    def node_path(self) -> Optional[str]:
+    def _node_path(self) -> Optional[str]:
         """
         Get the path to the Node.js executable
 
@@ -274,8 +272,22 @@ class NodeManager:
 
         return node_path
 
-    @property
-    def npm_path(self) -> str:
+    def _node_env(self) -> Optional[Dict[str, str]]:
+        """
+        Get the environment variables for the Node.js executable
+
+        Returns:
+            Optional[Dict[str, str]]: Environment variables for Node.js executable or None if using system Node.js
+        """
+        env = None
+        if self.node_path:
+            node_dir = os.path.dirname(self.node_path)
+            env = os.environ.copy()
+            env['PATH'] = node_dir + os.pathsep + env.get('PATH', '')
+
+        return env
+
+    def _npm_path(self) -> str:
         """
         Get the path to the npm executable
 
@@ -295,8 +307,7 @@ class NodeManager:
 
         return npm_path
 
-    @property
-    def npx_path(self) -> str:
+    def _npx_path(self) -> str:
         """
         Get the path to the npx executable
 
@@ -321,6 +332,7 @@ class TailwindCommand:
     def __init__(
         self,
         node_path: Optional[str],
+        node_env: Optional[Dict[str, str]],
         npm_path: str,
         npx_path: str,
         tailwind_version: Literal['3', '4'],
@@ -336,6 +348,7 @@ class TailwindCommand:
 
         Args:
             node_path (Optional[str]): Path to Node.js executable
+            node_env (Optional[Dict[str, str]]): Environment variables for Node.js executable
             npm_path (str): Path to npm executable
             npx_path (str): Path to npx executable
             tailwind_version (Literal['3', '4']): Version of Tailwind CSS
@@ -347,6 +360,7 @@ class TailwindCommand:
             theme_config (Optional[Dict[Any, Any]]): Custom theme configuration for Tailwind CSS
         """
         self.node_path = node_path
+        self.node_env = node_env
         self.npm_path = npm_path
         self.npx_path = npx_path
         self.tailwind_version = tailwind_version
@@ -458,17 +472,9 @@ class TailwindCommand:
         Returns:
             bool: True if Tailwind CSS is installed, False otherwise
         """
-        # If we found npx, use it with node, otherwise fallback to just npx
-        if self.node_path and not os.path.exists(self.npx_path):
-            cmd = [
-                self.node_path,
-                self.npx_path,
-                f'{self._tailwind_cli} --help',
-            ]
-        else:
-            cmd = [self.npx_path, f'{self._tailwind_cli} --help']
+        cmd = [self.npx_path, f'{self._tailwind_cli} --help']
 
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, env=self.node_env)
         return result.returncode == 0
 
     def init(self) -> Self:
@@ -509,17 +515,8 @@ class TailwindCommand:
                     logger.info(f'💾 Default config file created at: {self.config_js_path}')
 
             if not self._check_npm_init():
-                # If we found npm, use it with node, otherwise fallback to just npm
-                if self.node_path and not os.path.exists(self.npm_path):
-                    init_cmd = [
-                        self.node_path,
-                        self.npm_path,
-                        'init',
-                        '-y',
-                    ]
-                else:
-                    init_cmd = [self.npm_path, 'init', '-y']
-                result = subprocess.run(init_cmd, capture_output=True, text=True)
+                init_cmd = [self.npm_path, 'init', '-y']
+                result = subprocess.run(init_cmd, capture_output=True, text=True, env=self.node_env)
                 if result.returncode != 0:
                     logger.error(f'❌ Error initializing Tailwind CSS: {result.stderr}')
                     return self
@@ -541,23 +538,13 @@ class TailwindCommand:
         logger.info('📥 Start installing Tailwind CSS...')
         try:
             if not self._check_tailwindcss():
-                # If we found npm, use it with node, otherwise fallback to just npm
-                if self.node_path and not os.path.exists(self.npm_path):
-                    install_cmd = [
-                        self.node_path,
-                        self.npm_path,
-                        'install',
-                        '-D',
-                        *self._tailwind_package,
-                    ]
-                else:
-                    install_cmd = [
-                        self.npm_path,
-                        'install',
-                        '-D',
-                        *self._tailwind_package,
-                    ]
-                result = subprocess.run(install_cmd, capture_output=True, text=True)
+                install_cmd = [
+                    self.npm_path,
+                    'install',
+                    '-D',
+                    *self._tailwind_package,
+                ]
+                result = subprocess.run(install_cmd, capture_output=True, text=True, env=self.node_env)
                 if result.returncode != 0:
                     logger.error(f'❌ Error installing Tailwind CSS: {result.stderr}')
                     return self
@@ -578,32 +565,18 @@ class TailwindCommand:
         """
         logger.info(f'🔨 Building Tailwind CSS from {self.input_css_path} to {self.output_css_path}...')
         try:
-            # If we found npx, use it with node, otherwise fallback to just npx
-            if self.node_path and not os.path.exists(self.npx_path):
-                build_cmd = [
-                    self.node_path,
-                    self.npx_path,
-                    self._tailwind_cli,
-                    '-i',
-                    self.input_css_path,
-                    '-o',
-                    self.output_css_path,
-                    '-c',
-                    self.config_js_path,
-                ]
-            else:
-                build_cmd: list[str] = [
-                    self.npx_path,
-                    self._tailwind_cli,
-                    '-i',
-                    self.input_css_path,
-                    '-o',
-                    self.output_css_path,
-                    '-c',
-                    self.config_js_path,
-                ]
+            build_cmd: list[str] = [
+                self.npx_path,
+                self._tailwind_cli,
+                '-i',
+                self.input_css_path,
+                '-o',
+                self.output_css_path,
+                '-c',
+                self.config_js_path,
+            ]
 
-            result = subprocess.run(build_cmd, capture_output=True, text=True)
+            result = subprocess.run(build_cmd, capture_output=True, text=True, env=self.node_env)
 
             if result.returncode != 0:
                 logger.error(f'❌ Error building Tailwind CSS: {result.stderr}')
@@ -626,33 +599,18 @@ class TailwindCommand:
         """
         logger.info(f'👀 Watching for changes in {self.input_css_path}...')
         try:
-            # If we found npx, use it with node, otherwise fallback to just npx
-            if self.node_path and not os.path.exists(self.npx_path):
-                watch_cmd = [
-                    self.node_path,
-                    self.npx_path,
-                    self._tailwind_cli,
-                    '-i',
-                    self.input_css_path,
-                    '-o',
-                    self.output_css_path,
-                    '-c',
-                    self.config_js_path,
-                    '--watch',
-                ]
-            else:
-                watch_cmd = [
-                    self.npx_path,
-                    self._tailwind_cli,
-                    '-i',
-                    self.input_css_path,
-                    '-o',
-                    self.output_css_path,
-                    '-c',
-                    self.config_js_path,
-                    '--watch',
-                ]
-            subprocess.run(watch_cmd)
+            watch_cmd = [
+                self.npx_path,
+                self._tailwind_cli,
+                '-i',
+                self.input_css_path,
+                '-o',
+                self.output_css_path,
+                '-c',
+                self.config_js_path,
+                '--watch',
+            ]
+            subprocess.run(watch_cmd, env=self.node_env)
 
         except KeyboardInterrupt:
             logger.info('👋 Watch stopped.')

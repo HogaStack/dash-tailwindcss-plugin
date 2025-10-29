@@ -114,6 +114,7 @@ class TestUtils:
         # Create a TailwindCommand instance to access the method
         tailwind_command = TailwindCommand(
             node_path=None,
+            node_env=None,
             npm_path='npm',
             npx_path='npx',
             tailwind_version='3',
@@ -145,6 +146,7 @@ class TestUtils:
         # Create a TailwindCommand instance to access the method
         tailwind_command = TailwindCommand(
             node_path=None,
+            node_env=None,
             npm_path='npm',
             npx_path='npx',
             tailwind_version='3',
@@ -174,6 +176,7 @@ class TestUtils:
         # Create a TailwindCommand instance to access the method
         tailwind_command = TailwindCommand(
             node_path=None,
+            node_env=None,
             npm_path='npm',
             npx_path='npx',
             tailwind_version='3',
@@ -205,6 +208,7 @@ class TestUtils:
         # Create a TailwindCommand instance to access the method
         tailwind_command = TailwindCommand(
             node_path=None,
+            node_env=None,
             npm_path='npm',
             npx_path='npx',
             tailwind_version='3',
@@ -229,6 +233,7 @@ class TestUtils:
         # Create a TailwindCommand instance to access the method
         tailwind_command = TailwindCommand(
             node_path=None,
+            node_env=None,
             npm_path='npm',
             npx_path='npx',
             tailwind_version='3',
@@ -249,6 +254,7 @@ class TestUtils:
         """Test TailwindCommand with Tailwind CSS v4."""
         tailwind_command = TailwindCommand(
             node_path=None,
+            node_env=None,
             npm_path='npm',
             npx_path='npx',
             tailwind_version='4',
@@ -270,6 +276,7 @@ class TestUtils:
         # Create a TailwindCommand instance to access the method
         tailwind_command = TailwindCommand(
             node_path=None,
+            node_env=None,
             npm_path='npm',
             npx_path='npx',
             tailwind_version='4',
