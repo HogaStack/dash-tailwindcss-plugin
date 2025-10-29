@@ -142,6 +142,100 @@ class TestOnlineThemeConfig:
         assert 'borderRadius' in js_object
         assert 'xl: "1rem"' in js_object
 
+    def test_theme_config_with_v4(self):
+        """Test theme config with Tailwind CSS v4."""
+        # Define a custom theme configuration
+        theme_config = {
+            'colors': {
+                'brand': {
+                    '50': '#eff6ff',
+                    '500': '#3b82f6',
+                }
+            }
+        }
+
+        # Create plugin with online mode, v4, and theme config
+        plugin = _TailwindCSSPlugin(mode='online', tailwind_version='4', tailwind_theme_config=theme_config)
+
+        # Verify plugin properties
+        assert plugin.mode == 'online'
+        assert plugin.tailwind_version == '4'
+        assert plugin.tailwind_theme_config == theme_config
+
+    def test_theme_config_with_empty_values(self):
+        """Test theme config with empty values."""
+        # Define a theme configuration with empty values
+        theme_config = {
+            'colors': {
+                'primary': '',
+                'secondary': None,
+            },
+            'spacing': {},
+        }
+
+        # Create plugin with online mode and theme config
+        plugin = _TailwindCSSPlugin(mode='online', tailwind_theme_config=theme_config)
+
+        # Verify plugin properties
+        assert plugin.mode == 'online'
+        assert plugin.tailwind_theme_config == theme_config
+
+    def test_theme_config_with_complex_structure(self):
+        """Test theme config with complex structure."""
+        # Define a complex theme configuration
+        theme_config = {
+            'colors': {
+                'brand': {
+                    '50': '#eff6ff',
+                    '100': '#dbeafe',
+                    '200': '#bfdbfe',
+                    '300': '#93c5fd',
+                    '400': '#60a5fa',
+                    '500': '#3b82f6',
+                    '600': '#2563eb',
+                    '700': '#1d4ed8',
+                    '800': '#1e40af',
+                    '900': '#1e3a8a',
+                }
+            },
+            'extend': {
+                'spacing': {
+                    '128': '32rem',
+                    '144': '36rem',
+                },
+                'borderRadius': {
+                    'xl': '1rem',
+                    '2xl': '2rem',
+                },
+                'keyframes': {'spin': {'from': {'transform': 'rotate(0deg)'}, 'to': {'transform': 'rotate(360deg)'}}},
+                'animation': {'spin': 'spin 1s linear infinite'},
+            },
+        }
+
+        # Create plugin with online mode and theme config
+        plugin = _TailwindCSSPlugin(mode='online', tailwind_theme_config=theme_config)
+
+        # Verify plugin properties
+        assert plugin.mode == 'online'
+        assert plugin.tailwind_theme_config == theme_config
+
+        # Test the dict_to_js_object function directly
+        from dash_tailwindcss_plugin.utils import dict_to_js_object
+
+        js_object = dict_to_js_object(theme_config)
+
+        # Verify the structure contains all expected elements
+        assert 'brand' in js_object
+        assert '500: "#3b82f6"' in js_object
+        assert 'extend' in js_object
+        assert 'spacing' in js_object
+        assert '128: "32rem"' in js_object
+        assert 'borderRadius' in js_object
+        assert 'xl: "1rem"' in js_object
+        assert 'keyframes' in js_object
+        assert 'spin' in js_object
+        assert 'from: {' in str(js_object)  # Check that the keyframes structure is present
+
 
 if __name__ == '__main__':
     pytest.main([__file__])

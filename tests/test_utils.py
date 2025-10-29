@@ -53,6 +53,59 @@ class TestUtils:
         )
         assert result == expected
 
+    def test_dict_to_js_object_with_none_values(self):
+        """Test dict_to_js_object with None values."""
+        test_dict = {'key': None}
+        result = dict_to_js_object(test_dict)
+        expected = '{\n  key: None\n}'
+        assert result == expected
+
+    def test_dict_to_js_object_with_empty_values(self):
+        """Test dict_to_js_object with empty values."""
+        test_dict = {'empty_string': '', 'none_value': None, 'empty_list': [], 'empty_dict': {}}
+        result = dict_to_js_object(test_dict)
+        assert 'empty_string: ""' in result
+        assert 'none_value: None' in result
+        assert 'empty_list: []' in result
+        assert 'empty_dict: {}' in result
+
+    def test_dict_to_js_object_with_nested_arrays(self):
+        """Test dict_to_js_object with nested arrays containing dictionaries."""
+        test_dict = {'themes': [{'name': 'light', 'primary': '#ffffff'}, {'name': 'dark', 'primary': '#000000'}]}
+        result = dict_to_js_object(test_dict)
+        assert '"light"' in result
+        assert '"dark"' in result
+        assert 'primary: "#ffffff"' in result
+        assert 'primary: "#000000"' in result
+
+    def test_dict_to_js_object_with_complex_nested_structure(self):
+        """Test dict_to_js_object with complex nested structure."""
+        test_dict = {
+            'theme': {
+                'colors': {
+                    'brand': {
+                        '50': '#eff6ff',
+                        '100': '#dbeafe',
+                        '200': '#bfdbfe',
+                        '300': '#93c5fd',
+                        '400': '#60a5fa',
+                        '500': '#3b82f6',
+                        '600': '#2563eb',
+                        '700': '#1d4ed8',
+                        '800': '#1e40af',
+                        '900': '#1e3a8a',
+                    }
+                },
+                'spacing': {'0': '0px', '1': '0.25rem', '2': '0.5rem', '4': '1rem', '8': '2rem'},
+            }
+        }
+        result = dict_to_js_object(test_dict)
+        # Check that all nested keys are present
+        assert 'brand' in result
+        assert '500: "#3b82f6"' in result
+        assert 'spacing' in result
+        assert '4: "1rem"' in result
+
     def test_create_default_tailwindcss_config(self):
         """Test create_default_tailwindcss_config method."""
         config_path = 'test.config.js'
@@ -192,6 +245,52 @@ class TestUtils:
         assert os.path.exists(css_dir)
         assert os.path.exists(input_css_path)
 
+    def test_tailwind_command_with_v4_version(self):
+        """Test TailwindCommand with Tailwind CSS v4."""
+        tailwind_command = TailwindCommand(
+            node_path=None,
+            npm_path='npm',
+            npx_path='npx',
+            tailwind_version='4',
+            content_path=['**/*.py'],
+            input_css_path='input.css',
+            output_css_path='output.css',
+            config_js_path='config.js',
+            is_cli=False,
+        )
+
+        # Check that the correct CLI command and package are used for v4
+        assert tailwind_command._tailwind_cli == '@tailwindcss/cli'
+        assert tailwind_command._tailwind_package == ['tailwindcss', '@tailwindcss/cli']
+
+    def test_tailwind_command_create_default_input_v4(self):
+        """Test create_default_input_tailwindcss method with v4."""
+        input_css_path = 'test_input_v4.css'
+
+        # Create a TailwindCommand instance to access the method
+        tailwind_command = TailwindCommand(
+            node_path=None,
+            npm_path='npm',
+            npx_path='npx',
+            tailwind_version='4',
+            content_path=['*.html'],
+            input_css_path=input_css_path,
+            output_css_path='output.css',
+            config_js_path='config.js',
+            is_cli=False,
+        )
+
+        tailwind_command.create_default_input_tailwindcss()
+
+        # Check that file was created
+        assert os.path.exists(input_css_path)
+
+        # Check file content for v4
+        with open(input_css_path, 'r') as f:
+            content = f.read()
+            assert '@import "tailwindcss";' in content
+            assert '@tailwind base;' not in content  # Should not be present in v4
+
     def test_get_command_alias_by_platform(self):
         """Test get_command_alias_by_platform method."""
         node_manager = NodeManager(download_node=False, node_version='18.17.0')
@@ -227,6 +326,19 @@ class TestUtils:
             is_available, version = node_manager.check_nodejs_available()
             assert is_available is False
             assert version == ''
+
+    def test_node_manager_with_different_versions(self):
+        """Test NodeManager with different Node.js versions."""
+        node_manager = NodeManager(download_node=True, node_version='16.0.0')
+        assert node_manager.node_version == '16.0.0'
+
+        node_manager = NodeManager(download_node=True, node_version='20.0.0')
+        assert node_manager.node_version == '20.0.0'
+
+    def test_node_manager_with_v4_node_version(self):
+        """Test NodeManager with different Node.js versions including v4."""
+        node_manager = NodeManager(download_node=True, node_version='20.0.0')
+        assert node_manager.node_version == '20.0.0'
 
     def test_file_time_functions(self):
         """Test file time related functions."""

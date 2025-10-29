@@ -36,14 +36,14 @@ class TestTailwindCLI:
         mock_args.download_node = False
         mock_args.node_version = '18.17.0'
         mock_args.tailwind_theme_config = None
+        mock_args.tailwind_version = '3'
         mock_parse_args.return_value = mock_args
 
         cli = _TailwindCLI()
         with patch.object(cli, 'init_tailwindcss') as mock_init:
             cli.run()
             mock_init.assert_called_once_with(
-                input_css_path='./.tailwind/tailwind_input.css',
-                config_js_path='./.tailwind/tailwind.config.js'
+                input_css_path='./.tailwind/tailwind_input.css', config_js_path='./.tailwind/tailwind.config.js'
             )
 
     @patch('argparse.ArgumentParser.parse_args')
@@ -59,14 +59,13 @@ class TestTailwindCLI:
         mock_args.download_node = False
         mock_args.node_version = '18.17.0'
         mock_args.tailwind_theme_config = None
+        mock_args.tailwind_version = '3'
         mock_parse_args.return_value = mock_args
 
         cli = _TailwindCLI()
         with patch.object(cli, 'build_tailwindcss') as mock_build:
             cli.run()
-            mock_build.assert_called_once_with(
-                clean_after=False
-            )
+            mock_build.assert_called_once_with(clean_after=False)
 
     @patch('argparse.ArgumentParser.parse_args')
     def test_run_with_watch_command(self, mock_parse_args):
@@ -80,6 +79,7 @@ class TestTailwindCLI:
         mock_args.download_node = False
         mock_args.node_version = '18.17.0'
         mock_args.tailwind_theme_config = None
+        mock_args.tailwind_version = '3'
         mock_parse_args.return_value = mock_args
 
         cli = _TailwindCLI()
@@ -95,6 +95,7 @@ class TestTailwindCLI:
         mock_args.input_css_path = './.tailwind/tailwind_input.css'
         mock_args.config_js_path = './.tailwind/tailwind.config.js'
         mock_args.tailwind_theme_config = None
+        mock_args.tailwind_version = '3'
         mock_parse_args.return_value = mock_args
 
         cli = _TailwindCLI()
@@ -114,14 +115,14 @@ class TestTailwindCLI:
         mock_args.download_node = False
         mock_args.node_version = '18.17.0'
         mock_args.tailwind_theme_config = theme_config_json
+        mock_args.tailwind_version = '3'
         mock_parse_args.return_value = mock_args
 
         cli = _TailwindCLI()
         with patch.object(cli, 'init_tailwindcss') as mock_init:
             cli.run()
             mock_init.assert_called_once_with(
-                input_css_path='./.tailwind/tailwind_input.css',
-                config_js_path='./.tailwind/tailwind.config.js'
+                input_css_path='./.tailwind/tailwind_input.css', config_js_path='./.tailwind/tailwind.config.js'
             )
 
     @patch('argparse.ArgumentParser.parse_args')
@@ -136,15 +137,95 @@ class TestTailwindCLI:
         mock_args.download_node = False
         mock_args.node_version = '18.17.0'
         mock_args.tailwind_theme_config = theme_config_json
+        mock_args.tailwind_version = '3'
         mock_parse_args.return_value = mock_args
 
         cli = _TailwindCLI()
         with patch.object(cli, 'init_tailwindcss') as mock_init:
             cli.run()
             mock_init.assert_called_once_with(
-                input_css_path='./.tailwind/tailwind_input.css',
-                config_js_path='./.tailwind/tailwind.config.js'
+                input_css_path='./.tailwind/tailwind_input.css', config_js_path='./.tailwind/tailwind.config.js'
             )
+
+    @patch('argparse.ArgumentParser.parse_args')
+    def test_run_with_tailwind_v4(self, mock_parse_args):
+        """Test run method with Tailwind CSS v4."""
+        mock_args = MagicMock()
+        mock_args.command = 'init'
+        mock_args.content_path = None
+        mock_args.input_css_path = './.tailwind/tailwind_input.css'
+        mock_args.config_js_path = './.tailwind/tailwind.config.js'
+        mock_args.download_node = False
+        mock_args.node_version = '18.17.0'
+        mock_args.tailwind_theme_config = None
+        mock_args.tailwind_version = '4'
+        mock_parse_args.return_value = mock_args
+
+        cli = _TailwindCLI()
+        with patch.object(cli, 'init_tailwindcss') as mock_init:
+            cli.run()
+            mock_init.assert_called_once_with(
+                input_css_path='./.tailwind/tailwind_input.css', config_js_path='./.tailwind/tailwind.config.js'
+            )
+
+    @patch('argparse.ArgumentParser.parse_args')
+    def test_run_with_multiple_content_paths(self, mock_parse_args):
+        """Test run method with multiple content paths."""
+        mock_args = MagicMock()
+        mock_args.command = 'build'
+        mock_args.content_path = ['*.html', '*.js']
+        mock_args.input_css_path = './.tailwind/tailwind_input.css'
+        mock_args.output_css_path = './.tailwind/tailwind.css'
+        mock_args.config_js_path = './.tailwind/tailwind.config.js'
+        mock_args.clean_after = False
+        mock_args.download_node = False
+        mock_args.node_version = '18.17.0'
+        mock_args.tailwind_theme_config = None
+        mock_args.tailwind_version = '3'
+        mock_parse_args.return_value = mock_args
+
+        cli = _TailwindCLI()
+        with patch.object(cli, 'build_tailwindcss'):
+            with patch('dash_tailwindcss_plugin.cli.NodeManager'), patch(
+                'dash_tailwindcss_plugin.cli.TailwindCommand'
+            ) as mock_tailwind_command:
+                mock_tailwind_instance = MagicMock()
+                mock_tailwind_command.return_value = mock_tailwind_instance
+                cli.run()
+                # Verify that the multiple content paths are passed correctly
+                mock_tailwind_command.assert_called()
+                call_args = mock_tailwind_command.call_args[1]  # Get keyword arguments
+                assert call_args['content_path'] == ['*.html', '*.js']
+
+    @patch('argparse.ArgumentParser.parse_args')
+    def test_cli_with_multiple_content_paths(self, mock_parse_args):
+        """Test CLI with multiple content paths."""
+        with patch('argparse.ArgumentParser.parse_args') as mock_parse_args:
+            mock_args = MagicMock()
+            mock_args.command = 'build'
+            mock_args.content_path = ['*.html', '*.js', '*.py']
+            mock_args.input_css_path = './.tailwind/tailwind_input.css'
+            mock_args.output_css_path = './.tailwind/tailwind.css'
+            mock_args.config_js_path = './.tailwind/tailwind.config.js'
+            mock_args.clean_after = False
+            mock_args.download_node = False
+            mock_args.node_version = '18.17.0'
+            mock_args.tailwind_theme_config = None
+            mock_args.tailwind_version = '3'
+            mock_parse_args.return_value = mock_args
+
+            cli = _TailwindCLI()
+            with patch.object(cli, 'build_tailwindcss'):
+                with patch('dash_tailwindcss_plugin.cli.NodeManager'), patch(
+                    'dash_tailwindcss_plugin.cli.TailwindCommand'
+                ) as mock_tailwind_command:
+                    mock_tailwind_instance = MagicMock()
+                    mock_tailwind_command.return_value = mock_tailwind_instance
+                    cli.run()
+                    # Verify that the multiple content paths are passed correctly
+                    mock_tailwind_command.assert_called()
+                    call_args = mock_tailwind_command.call_args[1]  # Get keyword arguments
+                    assert call_args['content_path'] == ['*.html', '*.js', '*.py']
 
 
 if __name__ == '__main__':
