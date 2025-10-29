@@ -8,7 +8,7 @@ with open('requirements.txt', 'r', encoding='utf-8') as fh:
 
 setup(
     name='dash-tailwindcss-plugin',
-    version='0.1.3',
+    version='0.1.4',
     author='insistence',
     author_email='3055204202@qq.com',
     homepage='https://github.com/HogaStack/dash-tailwindcss-plugin',
