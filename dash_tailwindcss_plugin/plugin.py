@@ -15,9 +15,10 @@ class _TailwindCSSPlugin:
         mode: Literal['offline', 'online'] = 'offline',
         tailwind_version: Literal['3', '4'] = '3',
         content_path: List[str] = ['**/*.py'],
-        input_css_path: str = '.tailwind/tailwind_input.css',
-        output_css_path: str = '.tailwind/tailwind.css',
-        config_js_path: str = '.tailwind/tailwind.config.js',
+        plugin_tmp_dir: str = '_tailwind',
+        input_css_path: str = '_tailwind/tailwind_input.css',
+        output_css_path: str = '_tailwind/tailwind.css',
+        config_js_path: str = '_tailwind/tailwind.config.js',
         cdn_url: str = 'https://cdn.tailwindcss.com',
         download_node: bool = False,
         node_version: str = '18.17.0',
@@ -33,6 +34,7 @@ class _TailwindCSSPlugin:
             mode (Literal['offline', 'online']): Mode of operation ('offline' or 'online')
             tailwind_version (Literal['3', '4']): Version of Tailwind CSS
             content_path (List[str]): Glob patterns for files to scan for Tailwind classes
+            plugin_tmp_dir (str): Temporary directory for plugin files
             input_css_path (str): Path to input CSS file
             output_css_path (str): Path to output CSS file
             config_js_path (str): Path to Tailwind config file
@@ -57,6 +59,7 @@ class _TailwindCSSPlugin:
                 npx_path=node_manager.npx_path,
                 tailwind_version=tailwind_version,
                 content_path=content_path,
+                plugin_tmp_dir=plugin_tmp_dir,
                 input_css_path=input_css_path,
                 output_css_path=output_css_path,
                 config_js_path=config_js_path,
@@ -66,6 +69,7 @@ class _TailwindCSSPlugin:
         self.mode = mode
         self.tailwind_version = tailwind_version
         self.content_path = content_path
+        self.plugin_tmp_dir = plugin_tmp_dir
         self.input_css_path = input_css_path
         self.output_css_path = output_css_path
         self.config_js_path = config_js_path
@@ -204,9 +208,10 @@ def setup_tailwindcss_plugin(
     mode: Literal['online', 'offline'] = 'offline',
     tailwind_version: Literal['3', '4'] = '3',
     content_path: List[str] = ['**/*.py'],
-    input_css_path: str = '.tailwind/tailwind_input.css',
-    output_css_path: str = '.tailwind/tailwind.css',
-    config_js_path: str = '.tailwind/tailwind.config.js',
+    plugin_tmp_dir: str = '_tailwind',
+    input_css_path: str = '_tailwind/tailwind_input.css',
+    output_css_path: str = '_tailwind/tailwind.css',
+    config_js_path: str = '_tailwind/tailwind.config.js',
     cdn_url: str = 'https://cdn.tailwindcss.com',
     download_node: bool = False,
     node_version: str = '18.17.0',
@@ -222,6 +227,7 @@ def setup_tailwindcss_plugin(
         mode (Literal['online', 'offline']): Mode of operation ('offline' or 'online')
         tailwind_version (Literal['3', '4']): Version of Tailwind CSS
         content_path (List[str]): Glob patterns for files to scan for Tailwind classes
+        plugin_tmp_dir (str): Temporary directory for plugin files
         input_css_path (str): Path to input CSS file
         output_css_path (str): Path to output CSS file
         config_js_path (str): Path to Tailwind config file
@@ -237,6 +243,7 @@ def setup_tailwindcss_plugin(
         mode=mode,
         tailwind_version=tailwind_version,
         content_path=content_path,
+        plugin_tmp_dir=plugin_tmp_dir,
         input_css_path=input_css_path,
         output_css_path=output_css_path,
         config_js_path=config_js_path,

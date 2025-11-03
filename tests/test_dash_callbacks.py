@@ -248,7 +248,7 @@ class TestDashCallbacks:
     def test_offline_mode_callback(self, dash_duo: DashComposite):
         """Test callbacks work in offline mode with TailwindCSS."""
         # Setup TailwindCSS plugin in offline mode
-        output_css_path = f'.tailwind/offline_callback_test_{str(uuid.uuid4())[:8]}.css'
+        output_css_path = f'_tailwind/offline_callback_test_{str(uuid.uuid4())[:8]}.css'
         setup_tailwindcss_plugin(
             mode='offline',
             output_css_path=output_css_path,
@@ -468,7 +468,7 @@ class TestDashCallbacks:
     def test_callback_with_computed_styles(self, dash_duo: DashComposite):
         """Test that callbacks work correctly with elements that have computed Tailwind styles."""
         # Setup TailwindCSS plugin in offline mode
-        output_css_path = f'.tailwind/computed_styles_callback_test_{str(uuid.uuid4())[:8]}.css'
+        output_css_path = f'_tailwind/computed_styles_callback_test_{str(uuid.uuid4())[:8]}.css'
         setup_tailwindcss_plugin(
             mode='offline',
             output_css_path=output_css_path,

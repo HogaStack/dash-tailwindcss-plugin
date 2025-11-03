@@ -73,7 +73,7 @@ class TestDashIntegration:
     def test_offline_mode_integration(self, dash_duo: DashComposite):
         """Test the plugin works in offline mode with a Dash app."""
         # Setup TailwindCSS plugin in offline mode
-        output_css_path = f'.tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
+        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
         setup_tailwindcss_plugin(
             mode='offline',
             output_css_path=output_css_path,
@@ -140,7 +140,7 @@ class TestDashIntegration:
         theme_config = {'colors': {'brand': {'500': '#3b82f6'}}}
 
         # Setup TailwindCSS plugin with custom theme
-        output_css_path = f'.tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
+        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
         setup_tailwindcss_plugin(
             mode='offline',
             tailwind_theme_config=theme_config,
@@ -186,7 +186,7 @@ class TestDashIntegration:
     def test_tailwind_v4_integration(self, dash_duo: DashComposite):
         """Test the plugin works with Tailwind CSS v4."""
         # Setup TailwindCSS plugin with v4
-        output_css_path = f'.tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
+        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
         setup_tailwindcss_plugin(
             mode='offline',
             tailwind_version='4',
@@ -231,7 +231,7 @@ class TestDashIntegration:
     def test_complex_layout_integration(self, dash_duo: DashComposite):
         """Test the plugin works with complex layouts."""
         # Setup TailwindCSS plugin
-        output_css_path = f'.tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
+        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
         setup_tailwindcss_plugin(
             mode='offline',
             output_css_path=output_css_path,
@@ -326,7 +326,7 @@ class TestDashIntegration:
     def test_interactive_components_integration(self, dash_duo: DashComposite):
         """Test the plugin works with interactive components."""
         # Setup TailwindCSS plugin
-        output_css_path = f'.tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
+        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
         setup_tailwindcss_plugin(
             mode='offline',
             output_css_path=output_css_path,
@@ -424,7 +424,7 @@ class TestDashIntegration:
     def test_tailwind_classes_generate_computed_styles(self, dash_duo: DashComposite):
         """Test that Tailwind CSS classes generate actual computed styles."""
         # Setup TailwindCSS plugin in offline mode
-        output_css_path = f'.tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
+        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
         setup_tailwindcss_plugin(
             mode='offline',
             output_css_path=output_css_path,
@@ -505,7 +505,7 @@ class TestDashIntegration:
     def test_tailwind_utilities_applied_to_elements(self, dash_duo: DashComposite):
         """Test that Tailwind utility classes are applied to create specific visual effects."""
         # Setup TailwindCSS plugin in offline mode
-        output_css_path = f'.tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
+        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
         setup_tailwindcss_plugin(
             mode='offline',
             output_css_path=output_css_path,
@@ -603,7 +603,7 @@ class TestDashIntegration:
         }
 
         # Setup TailwindCSS plugin with custom theme
-        output_css_path = f'.tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
+        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
         setup_tailwindcss_plugin(
             mode='offline',
             tailwind_theme_config=theme_config,
@@ -672,7 +672,7 @@ class TestDashIntegration:
     def test_responsive_classes_media_queries(self, dash_duo: DashComposite):
         """Test that responsive Tailwind classes work with media queries."""
         # Setup TailwindCSS plugin in offline mode
-        output_css_path = f'.tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
+        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
         setup_tailwindcss_plugin(
             mode='offline',
             output_css_path=output_css_path,
@@ -723,7 +723,7 @@ class TestDashIntegration:
         theme_config = {'colors': {'custom': {'500': '#ff0000'}}}
 
         # Setup TailwindCSS plugin with all parameters
-        output_css_path = f'.tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
+        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
         setup_tailwindcss_plugin(
             mode='offline',
             tailwind_version='3',
@@ -844,7 +844,7 @@ class TestDashIntegration:
     def test_disable_cleanup_integration(self, dash_duo: DashComposite):
         """Test the plugin with cleanup disabled."""
         # Setup TailwindCSS plugin with cleanup disabled
-        output_css_path = f'.tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
+        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
         setup_tailwindcss_plugin(mode='offline', output_css_path=output_css_path, clean_after=False)
 
         # Create a Dash app
@@ -882,7 +882,7 @@ class TestDashIntegration:
     def test_enable_nodejs_download_integration(self, dash_duo: DashComposite):
         """Test the plugin with Node.js download enabled."""
         # Setup TailwindCSS plugin with Node.js download enabled
-        output_css_path = f'.tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
+        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
         setup_tailwindcss_plugin(
             mode='offline',
             download_node=True,
@@ -926,7 +926,7 @@ class TestDashIntegration:
     def test_tailwind_layout_utilities_with_computed_styles(self, dash_duo: DashComposite):
         """Test that Tailwind layout utilities generate correct computed styles."""
         # Setup TailwindCSS plugin in offline mode
-        output_css_path = f'.tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
+        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
         setup_tailwindcss_plugin(
             mode='offline',
             output_css_path=output_css_path,
@@ -986,7 +986,7 @@ class TestDashIntegration:
     def test_tailwind_spacing_utilities_with_computed_styles(self, dash_duo: DashComposite):
         """Test that Tailwind spacing utilities generate correct computed styles."""
         # Setup TailwindCSS plugin in offline mode
-        output_css_path = f'.tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
+        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
         setup_tailwindcss_plugin(
             mode='offline',
             output_css_path=output_css_path,
@@ -1040,7 +1040,7 @@ class TestDashIntegration:
     def test_tailwind_typography_utilities_with_computed_styles(self, dash_duo: DashComposite):
         """Test that Tailwind typography utilities generate correct computed styles."""
         # Setup TailwindCSS plugin in offline mode
-        output_css_path = f'.tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
+        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
         setup_tailwindcss_plugin(
             mode='offline',
             output_css_path=output_css_path,

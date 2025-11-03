@@ -337,6 +337,7 @@ class TailwindCommand:
         npx_path: str,
         tailwind_version: Literal['3', '4'],
         content_path: List[str],
+        plugin_tmp_dir: str,
         input_css_path: str,
         output_css_path: str,
         config_js_path: str,
@@ -370,6 +371,10 @@ class TailwindCommand:
         self.config_js_path = config_js_path
         self.is_cli = is_cli
         self.theme_config = theme_config or {}
+        # Ensure the tailwind_plugin directory exists
+        self.plugin_tmp_dir = plugin_tmp_dir
+        if not os.path.exists(self.plugin_tmp_dir):
+            os.makedirs(self.plugin_tmp_dir)
 
     def create_default_input_tailwindcss(self):
         """
@@ -463,7 +468,7 @@ class TailwindCommand:
         Returns:
             bool: True if npm init has been run, False otherwise
         """
-        return os.path.exists('package.json')
+        return os.path.exists(f'{self.plugin_tmp_dir}/package.json')
 
     def _check_tailwindcss(self) -> bool:
         """
@@ -474,7 +479,7 @@ class TailwindCommand:
         """
         check_cmd = [self.npx_path, f'{self._tailwind_cli} --help']
 
-        result = subprocess.run(check_cmd, capture_output=True, text=True, env=self.node_env)
+        result = subprocess.run(check_cmd, capture_output=True, text=True, cwd=self.plugin_tmp_dir, env=self.node_env)
         return result.returncode == 0
 
     def init(self) -> Self:
@@ -516,7 +521,9 @@ class TailwindCommand:
 
             if not self._check_npm_init():
                 init_cmd = [self.npm_path, 'init', '-y']
-                result = subprocess.run(init_cmd, capture_output=True, text=True, env=self.node_env)
+                result = subprocess.run(
+                    init_cmd, capture_output=True, text=True, cwd=self.plugin_tmp_dir, env=self.node_env
+                )
                 if result.returncode != 0:
                     raise RuntimeError(result.stderr)
 
@@ -544,7 +551,9 @@ class TailwindCommand:
                     '-D',
                     *self._tailwind_package,
                 ]
-                result = subprocess.run(install_cmd, capture_output=True, text=True, env=self.node_env)
+                result = subprocess.run(
+                    install_cmd, capture_output=True, text=True, cwd=self.plugin_tmp_dir, env=self.node_env
+                )
                 if result.returncode != 0:
                     raise RuntimeError(result.stderr)
 
@@ -567,7 +576,7 @@ class TailwindCommand:
         try:
             build_cmd: list[str] = [
                 self.npx_path,
-                self._tailwind_cli,
+                f'{self.plugin_tmp_dir}/node_modules/{self._tailwind_cli}',
                 '-i',
                 self.input_css_path,
                 '-o',
@@ -601,7 +610,7 @@ class TailwindCommand:
         try:
             watch_cmd = [
                 self.npx_path,
-                self._tailwind_cli,
+                f'{self.plugin_tmp_dir}/node_modules/{self._tailwind_cli}',
                 '-i',
                 self.input_css_path,
                 '-o',
@@ -632,12 +641,12 @@ class TailwindCommand:
         try:
             files_to_remove = [
                 self.config_js_path,
-                'package.json',
-                'package-lock.json',
+                f'{self.plugin_tmp_dir}/package.json',
+                f'{self.plugin_tmp_dir}/package-lock.json',
                 self.input_css_path,
             ]
 
-            directories_to_remove = ['node_modules']
+            directories_to_remove = [f'{self.plugin_tmp_dir}/node_modules']
 
             # Remove files
             for file_path in files_to_remove:

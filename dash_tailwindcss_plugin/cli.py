@@ -39,18 +39,23 @@ class _TailwindCLI:
             help='Glob pattern for files to scan for Tailwind classes. Can be specified multiple times.',
         )
         parser.add_argument(
+            '--plugin-tmp-dir',
+            default='./_tailwind',
+            help='Path to temporary directory for plugin files',
+        )
+        parser.add_argument(
             '--input-css-path',
-            default='./.tailwind/tailwind_input.css',
+            default='./_tailwind/tailwind_input.css',
             help='Path to input CSS file',
         )
         parser.add_argument(
             '--output-css-path',
-            default='./.tailwind/tailwind.css',
+            default='./_tailwind/tailwind.css',
             help='Path to output CSS file',
         )
         parser.add_argument(
             '--config-js-path',
-            default='./.tailwind/tailwind.config.js',
+            default='./_tailwind/tailwind.config.js',
             help='Path to Tailwind config file',
         )
         parser.add_argument(
@@ -97,6 +102,7 @@ class _TailwindCLI:
             npx_path=node_manager.npx_path,
             tailwind_version=args.tailwind_version,
             content_path=args.content_path if args.content_path else ['**/*.py'],
+            plugin_tmp_dir=args.plugin_tmp_dir,
             input_css_path=args.input_css_path,
             output_css_path=args.output_css_path,
             config_js_path=args.config_js_path,

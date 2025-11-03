@@ -27,9 +27,10 @@ class TestTailwindCSSPlugin:
 
         assert plugin.mode == 'offline'
         assert plugin.content_path == ['**/*.py']
-        assert plugin.input_css_path == '.tailwind/tailwind_input.css'
-        assert plugin.output_css_path == '.tailwind/tailwind.css'
-        assert plugin.config_js_path == '.tailwind/tailwind.config.js'
+        assert plugin.plugin_tmp_dir == '_tailwind'
+        assert plugin.input_css_path == '_tailwind/tailwind_input.css'
+        assert plugin.output_css_path == '_tailwind/tailwind.css'
+        assert plugin.config_js_path == '_tailwind/tailwind.config.js'
         assert plugin.cdn_url == 'https://cdn.tailwindcss.com'
         assert plugin.download_node is False
         assert plugin.node_version == '18.17.0'
@@ -44,6 +45,7 @@ class TestTailwindCSSPlugin:
         plugin = _TailwindCSSPlugin(
             mode='online',
             content_path=custom_content_path,
+            plugin_tmp_dir='_custom_tailwind',
             input_css_path='custom_input.css',
             output_css_path='custom_output.css',
             config_js_path='custom_config.js',
@@ -58,6 +60,7 @@ class TestTailwindCSSPlugin:
 
         assert plugin.mode == 'online'
         assert plugin.content_path == custom_content_path
+        assert plugin.plugin_tmp_dir == '_custom_tailwind'
         assert plugin.input_css_path == 'custom_input.css'
         assert plugin.output_css_path == 'custom_output.css'
         assert plugin.config_js_path == 'custom_config.js'
@@ -106,6 +109,7 @@ class TestTailwindCSSPlugin:
             mode='offline',
             tailwind_version='4',
             content_path=['*.html', '*.js'],
+            plugin_tmp_dir='_custom_tailwind',
             input_css_path='custom_input.css',
             output_css_path='custom_output.css',
             config_js_path='custom_config.js',
@@ -121,6 +125,7 @@ class TestTailwindCSSPlugin:
         assert plugin.mode == 'offline'
         assert plugin.tailwind_version == '4'
         assert plugin.content_path == ['*.html', '*.js']
+        assert plugin.plugin_tmp_dir == '_custom_tailwind'
         assert plugin.input_css_path == 'custom_input.css'
         assert plugin.output_css_path == 'custom_output.css'
         assert plugin.config_js_path == 'custom_config.js'
@@ -343,6 +348,23 @@ class TestTailwindCSSPlugin:
 
         assert plugin.download_node is True
         assert plugin.node_version == '20.0.0'
+
+    def test_plugin_with_custom_plugin_tmp_dir(self):
+        """Test plugin initialization with custom plugin temporary directory."""
+        plugin = _TailwindCSSPlugin(mode='offline', plugin_tmp_dir='_custom_tmp')
+
+        assert plugin.plugin_tmp_dir == '_custom_tmp'
+
+    def test_plugin_with_skip_build_parameters(self):
+        """Test plugin initialization with skip build parameters."""
+        plugin = _TailwindCSSPlugin(
+            mode='offline', 
+            skip_build_if_recent=False, 
+            skip_build_time_threshold=10
+        )
+
+        assert plugin.skip_build_if_recent is False
+        assert plugin.skip_build_time_threshold == 10
 
 
 if __name__ == '__main__':
