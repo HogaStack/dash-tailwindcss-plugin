@@ -208,6 +208,4 @@ __marimo__/
 
 node_modules/
 dash_tailwindcss_plugin/.nodejs_cache/
-.tailwind/
-.package.json
-.package-lock.json
+_tailwind/
