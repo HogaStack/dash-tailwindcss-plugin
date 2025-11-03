@@ -79,8 +79,9 @@ setup_tailwindcss_plugin(
     mode="offline",
     tailwind_version="3",  # Specify Tailwind CSS version (v3 or v4)
     content_path=["**/*.py"],  # Files to scan for Tailwind classes
-    output_css_path=".tailwind/tailwind.css",  # Output CSS file
-    config_js_path=".tailwind/tailwind.config.js",  # Tailwind config file
+    plugin_tmp_dir="_tailwind",  # Temporary directory for plugin files
+    output_css_path="_tailwind/tailwind.css",  # Output CSS file
+    config_js_path="_tailwind/tailwind.config.js",  # Tailwind config file
     download_node=True,  # Download Node.js if not found
     node_version="18.17.0"  # Specify Node.js version to download
 )
@@ -89,6 +90,58 @@ app = Dash(__name__)
 app.layout = html.Div([
     html.H1("Hello, TailwindCSS!", className="text-3xl font-bold text-blue-600"),
     html.P("This is styled with locally built Tailwind CSS.", className="text-gray-700 mt-4")
+])
+
+if __name__ == "__main__":
+    app.run(debug=True)
+```
+
+### Custom Plugin Temporary Directory
+
+You can specify a custom temporary directory for plugin files:
+
+```python
+from dash import Dash, html
+from dash_tailwindcss_plugin import setup_tailwindcss_plugin
+
+# Initialize with custom plugin temporary directory
+setup_tailwindcss_plugin(
+    mode="offline",
+    plugin_tmp_dir="_my_tailwind",  # Custom temporary directory
+    input_css_path="_my_tailwind/input.css",
+    output_css_path="_my_tailwind/output.css",
+    config_js_path="_my_tailwind/config.js"
+)
+
+app = Dash(__name__)
+app.layout = html.Div([
+    html.H1("Custom Directory", className="text-3xl font-bold text-green-600"),
+    html.P("This uses a custom temporary directory.", className="text-gray-700 mt-4")
+])
+
+if __name__ == "__main__":
+    app.run(debug=True)
+```
+
+### Control Build Skip Behavior
+
+You can control whether to skip rebuilding if CSS was recently generated:
+
+```python
+from dash import Dash, html
+from dash_tailwindcss_plugin import setup_tailwindcss_plugin
+
+# Initialize with custom skip build parameters
+setup_tailwindcss_plugin(
+    mode="offline",
+    skip_build_if_recent=True,  # Skip build if CSS was recently generated
+    skip_build_time_threshold=10  # Consider CSS recent if generated within 10 seconds
+)
+
+app = Dash(__name__)
+app.layout = html.Div([
+    html.H1("Smart Rebuild", className="text-3xl font-bold text-purple-600"),
+    html.P("This uses smart rebuild behavior.", className="text-gray-700 mt-4")
 ])
 
 if __name__ == "__main__":
@@ -234,9 +287,10 @@ The plugin accepts the following parameters:
 - `mode`: "online" or "offline" (default: "offline")
 - `tailwind_version`: "3" or "4" (default: "3")
 - `content_path`: Glob patterns for files to scan (default: ["**/*.py"])
-- `input_css_path`: Path to input CSS file (default: ".tailwind/tailwind_input.css")
-- `output_css_path`: Path to output CSS file (default: ".tailwind/tailwind.css")
-- `config_js_path`: Path to Tailwind config file (default: ".tailwind/tailwind.config.js")
+- `plugin_tmp_dir`: Temporary directory for plugin files (default: "_tailwind")
+- `input_css_path`: Path to input CSS file (default: "_tailwind/tailwind_input.css")
+- `output_css_path`: Path to output CSS file (default: "_tailwind/tailwind.css")
+- `config_js_path`: Path to Tailwind config file (default: "_tailwind/tailwind.config.js")
 - `cdn_url`: CDN URL for online mode (default: "<https://cdn.tailwindcss.com>")
 - `download_node`: Whether to download Node.js if not found (default: False)
 - `node_version`: Node.js version to download if download_node is True (default: "18.17.0")
@@ -324,9 +378,10 @@ All commands support the following options:
 
 - `--tailwind-version VERSION`: Version of Tailwind CSS to use (3 or 4) (default: "3")
 - `--content-path INPUT`: Glob pattern for files to scan for Tailwind classes. Can be specified multiple times. (default: ["**/*.py"])
-- `--input-css-path PATH`: Path to input CSS file (default: "./.tailwind/tailwind_input.css")
-- `--output-css-path OUTPUT`: Path to output CSS file (default: "./.tailwind/tailwind.css")
-- `--config-js-path CONFIG`: Path to Tailwind config file (default: "./.tailwind/tailwind.config.js")
+- `--plugin-tmp-dir PATH`: Temporary directory for plugin files (default: "./_tailwind")
+- `--input-css-path PATH`: Path to input CSS file (default: "./_tailwind/tailwind_input.css")
+- `--output-css-path OUTPUT`: Path to output CSS file (default: "./_tailwind/tailwind.css")
+- `--config-js-path CONFIG`: Path to Tailwind config file (default: "./_tailwind/tailwind.config.js")
 - `--tailwind-theme-config JSON`: JSON string of custom theme configuration for Tailwind CSS
 - `--download-node`: Download Node.js if not found in PATH
 - `--node-version VERSION`: Node.js version to download (if --download-node is used)
@@ -354,6 +409,12 @@ Example with Tailwind CSS v4:
 
 ```bash
 dash-tailwindcss-plugin build --tailwind-version 4
+```
+
+Example with custom plugin temporary directory:
+
+```bash
+dash-tailwindcss-plugin build --plugin-tmp-dir "./my-tailwind" --input-css-path "./my-tailwind/input.css" --output-css-path "./my-tailwind/output.css" --config-js-path "./my-tailwind/config.js"
 ```
 
 ## Architecture
