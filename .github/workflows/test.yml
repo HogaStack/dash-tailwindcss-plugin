@@ -7,7 +7,7 @@ on:
     branches: [ main, master ]
 
 jobs:
-  test:
+  test-unit:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -37,7 +37,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.9, "3.10", 3.11]
+        python-version: [3.8, 3.9, "3.10", 3.11, 3.12]
 
     steps:
     - uses: actions/checkout@v3
@@ -76,7 +76,7 @@ jobs:
         DISPLAY: :99
       continue-on-error: true
 
-  lint:
+  lint-format:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
