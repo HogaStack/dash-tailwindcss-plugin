@@ -12,69 +12,46 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: [3.8, 3.9, "3.10", 3.11, 3.12]
 
     steps:
     - uses: actions/checkout@v3
 
-    - name: Set up Python versions
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
-        python-version: |
-          3.8
-          3.9
-          3.10
-          3.11
-          3.12
+        python-version: ${{ matrix.python-version }}
 
-    - name: Install dependencies and run unit tests for each Python version
+    - name: Install dependencies
       run: |
-        # Define Python executables for different platforms
-        if [[ "$RUNNER_OS" == "Windows" ]]; then
-          PY38="py -3.8"
-          PY39="py -3.9"
-          PY310="py -3.10"
-          PY311="py -3.11"
-          PY312="py -3.12"
-        else
-          PY38="python3.8"
-          PY39="python3.9"
-          PY310="python3.10"
-          PY311="python3.11"
-          PY312="python3.12"
-        fi
-        
-        # Run tests for each Python version
-        for version in "3.8|$PY38" "3.9|$PY39" "3.10|$PY310" "3.11|$PY311" "3.12|$PY312"; do
-          IFS='|' read -r version_name python_exe <<< "$version"
-          echo "Setting up Python $version_name"
-          echo "Installing dependencies for Python $version_name"
-          $python_exe -m pip install --upgrade pip
-          $python_exe -m pip install -e .
-          $python_exe -m pip install -r requirements-test.txt
-          
-          echo "Running unit tests for Python $version_name"
-          $python_exe -m pytest tests/test_plugin.py tests/test_utils.py tests/test_cli.py tests/test_integration.py tests/test_dash_simple.py
-        done
-      shell: bash
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install -r requirements-test.txt
+
+    - name: Run unit tests
+      run: |
+        pytest tests/test_plugin.py tests/test_utils.py tests/test_cli.py tests/test_integration.py tests/test_dash_simple.py
 
   test-browser:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: [3.8, 3.9, "3.10", 3.11, 3.12]
 
     steps:
     - uses: actions/checkout@v3
 
-    - name: Set up Python versions
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
-        python-version: |
-          3.8
-          3.9
-          3.10
-          3.11
-          3.12
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install -r requirements-test.txt
 
     - name: Install browser for testing (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
@@ -98,39 +75,11 @@ jobs:
         export DISPLAY=:99
         Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
 
-    - name: Install dependencies and run browser tests for each Python version
+    - name: Run browser tests
       run: |
-        # Define Python executables for different platforms
-        if [[ "$RUNNER_OS" == "Windows" ]]; then
-          PY38="py -3.8"
-          PY39="py -3.9"
-          PY310="py -3.10"
-          PY311="py -3.11"
-          PY312="py -3.12"
-        else
-          PY38="python3.8"
-          PY39="python3.9"
-          PY310="python3.10"
-          PY311="python3.11"
-          PY312="python3.12"
-        fi
-        
-        # Run tests for each Python version
-        for version in "3.8|$PY38" "3.9|$PY39" "3.10|$PY310" "3.11|$PY311" "3.12|$PY312"; do
-          IFS='|' read -r version_name python_exe <<< "$version"
-          echo "Setting up Python $version_name"
-          echo "Installing dependencies for Python $version_name"
-          $python_exe -m pip install --upgrade pip
-          $python_exe -m pip install -e .
-          $python_exe -m pip install -r requirements-test.txt
-          
-          echo "Running browser tests for Python $version_name"
-          $python_exe -m pytest tests/test_dash_callbacks.py tests/test_dash_integration.py
-        done
+        pytest tests/test_dash_callbacks.py tests/test_dash_integration.py
       env:
         DISPLAY: :99
-      continue-on-error: true
-      shell: bash
 
   lint-format:
     runs-on: ubuntu-latest
