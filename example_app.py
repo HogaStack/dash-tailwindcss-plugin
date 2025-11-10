@@ -18,22 +18,22 @@ except ImportError as e:
 
 # Example 3: Initialize with custom theme configuration
 theme_config = {
-    "colors": {
-        "brand": {
-            "50": "#eff6ff",
-            "100": "#dbeafe",
-            "200": "#bfdbfe",
-            "300": "#93c5fd",
-            "400": "#60a5fa",
-            "500": "#3b82f6",
-            "600": "#2563eb",
-            "700": "#1d4ed8",
-            "800": "#1e40af",
-            "900": "#1e3a8a"
+    'colors': {
+        'brand': {
+            '50': '#eff6ff',
+            '100': '#dbeafe',
+            '200': '#bfdbfe',
+            '300': '#93c5fd',
+            '400': '#60a5fa',
+            '500': '#3b82f6',
+            '600': '#2563eb',
+            '700': '#1d4ed8',
+            '800': '#1e40af',
+            '900': '#1e3a8a',
         }
     }
 }
-setup_tailwindcss_plugin(mode="offline", tailwind_theme_config=theme_config)
+setup_tailwindcss_plugin(mode='offline', tailwind_theme_config=theme_config)
 
 # Example 4: Initialize with download_node option
 # setup_tailwindcss_plugin(mode="offline", download_node=True, node_version="18.17.0")

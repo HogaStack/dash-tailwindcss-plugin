@@ -357,11 +357,7 @@ class TestTailwindCSSPlugin:
 
     def test_plugin_with_skip_build_parameters(self):
         """Test plugin initialization with skip build parameters."""
-        plugin = _TailwindCSSPlugin(
-            mode='offline', 
-            skip_build_if_recent=False, 
-            skip_build_time_threshold=10
-        )
+        plugin = _TailwindCSSPlugin(mode='offline', skip_build_if_recent=False, skip_build_time_threshold=10)
 
         assert plugin.skip_build_if_recent is False
         assert plugin.skip_build_time_threshold == 10
