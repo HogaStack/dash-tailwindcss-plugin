@@ -4,6 +4,8 @@
 [![PyPI](https://img.shields.io/pypi/v/dash-tailwindcss-plugin.svg?color=dark-green)](https://pypi.org/project/dash-tailwindcss-plugin/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
+English | [简体中文](./README-zh_CN.md)
+
 A plugin for integrating TailwindCSS with Plotly Dash applications using Dash 3.x hooks. Supports both Tailwind CSS v3 and v4.
 
 ## Features
@@ -242,15 +244,15 @@ dash-tailwindcss-plugin/
 │   ├── test_dash_simple.py  # Simple Dash integration tests (no browser required)
 │   ├── test_dash_integration.py  # Dash end-to-end integration tests (requires browser automation)
 │   └── test_dash_callbacks.py    # Dash callback and layout tests
-├── example_app.py           # Example Dash
-application
+├── example_app.py           # Example Dash application
 ├── requirements.txt         # Runtime dependencies
 ├── requirements-test.txt    # Test dependencies
 ├── setup.py                 # Setup script for installation
 ├── pyproject.toml           # Build configuration
 ├── pytest.ini               # Pytest configuration
 ├── ruff.toml                # Ruff configuration (linting)
-└── README.md                # This file
+├── README.md                # English README file
+└── README-zh_CN.md          # Chinese README file
 ```
 
 ## Requirements
