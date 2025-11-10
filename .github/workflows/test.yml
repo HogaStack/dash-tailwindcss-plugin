@@ -22,7 +22,7 @@ jobs:
         python-version: |
           3.8
           3.9
-          "3.10"
+          3.10
           3.11
           3.12
 
@@ -30,20 +30,13 @@ jobs:
       run: |
         for python_version in 3.8 3.9 3.10 3.11 3.12; do
           echo "Setting up Python $python_version"
-          # Create a virtual environment for each Python version to avoid conflicts
-          python$python_version -m venv venv_$python_version
-          source venv_$python_version/bin/activate
-          
           echo "Installing dependencies for Python $python_version"
-          python -m pip install --upgrade pip
-          python -m pip install -e .
-          python -m pip install -r requirements-test.txt
+          python$python_version -m pip install --upgrade pip
+          python$python_version -m pip install -e .
+          python$python_version -m pip install -r requirements-test.txt
           
           echo "Running unit tests for Python $python_version"
-          python -m pytest tests/test_plugin.py tests/test_utils.py tests/test_cli.py tests/test_integration.py tests/test_dash_simple.py
-          
-          # Deactivate virtual environment
-          deactivate
+          python$python_version -m pytest tests/test_plugin.py tests/test_utils.py tests/test_cli.py tests/test_integration.py tests/test_dash_simple.py
         done
       shell: bash
 
@@ -62,7 +55,7 @@ jobs:
         python-version: |
           3.8
           3.9
-          "3.10"
+          3.10
           3.11
           3.12
 
@@ -92,20 +85,13 @@ jobs:
       run: |
         for python_version in 3.8 3.9 3.10 3.11 3.12; do
           echo "Setting up Python $python_version"
-          # Create a virtual environment for each Python version to avoid conflicts
-          python$python_version -m venv venv_$python_version
-          source venv_$python_version/bin/activate
-          
           echo "Installing dependencies for Python $python_version"
-          python -m pip install --upgrade pip
-          python -m pip install -e .
-          python -m pip install -r requirements-test.txt
+          python$python_version -m pip install --upgrade pip
+          python$python_version -m pip install -e .
+          python$python_version -m pip install -r requirements-test.txt
           
           echo "Running browser tests for Python $python_version"
-          python -m pytest tests/test_dash_callbacks.py tests/test_dash_integration.py
-          
-          # Deactivate virtual environment
-          deactivate
+          python$python_version -m pytest tests/test_dash_callbacks.py tests/test_dash_integration.py
         done
       env:
         DISPLAY: :99
