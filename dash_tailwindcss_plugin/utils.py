@@ -1,13 +1,13 @@
+import logging
 import os
 import platform
 import shutil
 import subprocess
 import tarfile
-from typing_extensions import Self
 import urllib.request
-import logging
 import zipfile
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing_extensions import Self
 
 
 # Custom log formatter to add colors for different log levels
@@ -118,12 +118,12 @@ class NodeManager:
         self.npm_path = self._npm_path()
         self.npx_path = self._npx_path()
 
-    def check_nodejs_available(self) -> tuple[bool, str]:
+    def check_nodejs_available(self) -> Tuple[bool, str]:
         """
         Check if Node.js is available in PATH
 
         Returns:
-            tuple[bool, str]: A tuple containing:
+            Tuple[bool, str]: A tuple containing:
                 - bool: True if Node.js is available, False otherwise
                 - str: The version of Node.js if available, empty string otherwise
         """
