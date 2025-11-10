@@ -536,14 +536,17 @@ class TestDashCallbacks:
         assert text_color is not None and len(text_color) > 0
 
         # Test toggle functionality
+        # Wait for content to be displayed initially
+        dash_duo.wait_for_element_by_id('toggle-content')
         toggle_content = dash_duo.find_element('#toggle-content')
+        # Use wait_for_style_to_equal to ensure the element is displayed
+        dash_duo.wait_for_style_to_equal('#toggle-content', 'display', 'block')
         assert toggle_content.is_displayed()
 
         # Click toggle button to hide content
         dash_duo.find_element('#toggle-button').click()
-        dash_duo.wait_for_element_by_id('toggle-content')
-        # Wait a moment for the transition
-        dash_duo.driver.implicitly_wait(1)
+        # Wait for the element to be hidden
+        dash_duo.wait_for_style_to_equal('#toggle-content', 'display', 'none')
         # Check that content is hidden
         # We need to re-find the element after the DOM update
         toggle_content = dash_duo.find_element('#toggle-content')
@@ -551,9 +554,8 @@ class TestDashCallbacks:
 
         # Click toggle button again to show content
         dash_duo.find_element('#toggle-button').click()
-        dash_duo.wait_for_element_by_id('toggle-content')
-        # Wait a moment for the transition
-        dash_duo.driver.implicitly_wait(1)
+        # Wait for the element to be displayed again
+        dash_duo.wait_for_style_to_equal('#toggle-content', 'display', 'block')
         # Check that content is displayed again
         # We need to re-find the element after the DOM update
         toggle_content = dash_duo.find_element('#toggle-content')
