@@ -28,15 +28,32 @@ jobs:
 
     - name: Install dependencies and run unit tests for each Python version
       run: |
-        for python_version in 3.8 3.9 3.10 3.11 3.12; do
-          echo "Setting up Python $python_version"
-          echo "Installing dependencies for Python $python_version"
-          python$python_version -m pip install --upgrade pip
-          python$python_version -m pip install -e .
-          python$python_version -m pip install -r requirements-test.txt
+        # Define Python executables for different platforms
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          PY38="py -3.8"
+          PY39="py -3.9"
+          PY310="py -3.10"
+          PY311="py -3.11"
+          PY312="py -3.12"
+        else
+          PY38="python3.8"
+          PY39="python3.9"
+          PY310="python3.10"
+          PY311="python3.11"
+          PY312="python3.12"
+        fi
+        
+        # Run tests for each Python version
+        for version in "3.8|$PY38" "3.9|$PY39" "3.10|$PY310" "3.11|$PY311" "3.12|$PY312"; do
+          IFS='|' read -r version_name python_exe <<< "$version"
+          echo "Setting up Python $version_name"
+          echo "Installing dependencies for Python $version_name"
+          $python_exe -m pip install --upgrade pip
+          $python_exe -m pip install -e .
+          $python_exe -m pip install -r requirements-test.txt
           
-          echo "Running unit tests for Python $python_version"
-          python$python_version -m pytest tests/test_plugin.py tests/test_utils.py tests/test_cli.py tests/test_integration.py tests/test_dash_simple.py
+          echo "Running unit tests for Python $version_name"
+          $python_exe -m pytest tests/test_plugin.py tests/test_utils.py tests/test_cli.py tests/test_integration.py tests/test_dash_simple.py
         done
       shell: bash
 
@@ -83,15 +100,32 @@ jobs:
 
     - name: Install dependencies and run browser tests for each Python version
       run: |
-        for python_version in 3.8 3.9 3.10 3.11 3.12; do
-          echo "Setting up Python $python_version"
-          echo "Installing dependencies for Python $python_version"
-          python$python_version -m pip install --upgrade pip
-          python$python_version -m pip install -e .
-          python$python_version -m pip install -r requirements-test.txt
+        # Define Python executables for different platforms
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          PY38="py -3.8"
+          PY39="py -3.9"
+          PY310="py -3.10"
+          PY311="py -3.11"
+          PY312="py -3.12"
+        else
+          PY38="python3.8"
+          PY39="python3.9"
+          PY310="python3.10"
+          PY311="python3.11"
+          PY312="python3.12"
+        fi
+        
+        # Run tests for each Python version
+        for version in "3.8|$PY38" "3.9|$PY39" "3.10|$PY310" "3.11|$PY311" "3.12|$PY312"; do
+          IFS='|' read -r version_name python_exe <<< "$version"
+          echo "Setting up Python $version_name"
+          echo "Installing dependencies for Python $version_name"
+          $python_exe -m pip install --upgrade pip
+          $python_exe -m pip install -e .
+          $python_exe -m pip install -r requirements-test.txt
           
-          echo "Running browser tests for Python $python_version"
-          python$python_version -m pytest tests/test_dash_callbacks.py tests/test_dash_integration.py
+          echo "Running browser tests for Python $version_name"
+          $python_exe -m pytest tests/test_dash_callbacks.py tests/test_dash_integration.py
         done
       env:
         DISPLAY: :99
