@@ -57,7 +57,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y chromium-browser chromium-chromedriver
+        sudo apt-get install -y chromium-browser chromium-chromedriver xvfb
 
     - name: Install browser for testing (macOS)
       if: matrix.os == 'macos-latest'
@@ -68,6 +68,12 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: |
         choco install chromium chromedriver
+
+    - name: Start virtual display (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        export DISPLAY=:99
+        Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
 
     - name: Run browser tests
       run: |
