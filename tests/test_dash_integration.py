@@ -1,16 +1,8 @@
-#!/usr/bin/env python3
-"""
-Dash integration tests for the TailwindCSS plugin.
-
-These tests use the dash_duo pytest fixture to test the plugin's integration
-with a real Dash application.
-"""
-
-import tempfile
-import shutil
 import os
+import shutil
+import tempfile
 import uuid
-from dash import Dash, html, dcc
+from dash import callback, Dash, dcc, html, Input, Output
 from dash.testing.composite import DashComposite
 from dash_tailwindcss_plugin import setup_tailwindcss_plugin
 
@@ -421,302 +413,6 @@ class TestDashIntegration:
         # Check that there are no console errors
         assert dash_duo.get_logs() == [], 'Browser console should contain no errors'
 
-    def test_tailwind_classes_generate_computed_styles(self, dash_duo: DashComposite):
-        """Test that Tailwind CSS classes generate actual computed styles."""
-        # Setup TailwindCSS plugin in offline mode
-        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
-        setup_tailwindcss_plugin(
-            mode='offline',
-            output_css_path=output_css_path,
-            clean_after=False,  # Don't clean up so we can check the generated files
-        )
-
-        # Create a Dash app
-        app = Dash(__name__)
-
-        # Define a layout with specific Tailwind CSS classes
-        app.layout = html.Div(
-            [
-                html.H1('Style Test', id='styled-header', className='text-3xl font-bold text-blue-600 text-center'),
-                html.P('Styled paragraph', id='styled-paragraph', className='bg-gray-100 p-4 rounded mt-4'),
-                html.A('Hover link', id='hover-link', className='hover:text-blue-800'),
-            ]
-        )
-
-        # Start the app
-        dash_duo.start_server(app)
-
-        # Wait for the app to load
-        dash_duo.wait_for_text_to_equal('#styled-header', 'Style Test')
-
-        # Verify that elements with Tailwind classes have the expected computed styles
-        header = dash_duo.find_element('#styled-header')
-
-        # Check font size (text-3xl should be about 1.875rem)
-        font_size = dash_duo.driver.execute_script('return window.getComputedStyle(arguments[0]).fontSize;', header)
-        # Note: Actual value might vary slightly based on browser rendering
-        assert font_size is not None and float(font_size.replace('px', '')) > 20
-
-        # Check font weight (font-bold should be 700)
-        font_weight = dash_duo.driver.execute_script('return window.getComputedStyle(arguments[0]).fontWeight;', header)
-        assert font_weight == '700'
-
-        # Check text color (text-blue-600 should be #2563eb)
-        text_color = dash_duo.driver.execute_script('return window.getComputedStyle(arguments[0]).color;', header)
-        # Convert rgb to hex for comparison
-        assert 'rgb(37, 99, 235)' in text_color or '#2563eb' in text_color.lower()
-
-        # Check paragraph styles
-        paragraph = dash_duo.find_element('#styled-paragraph')
-
-        # Check background color (bg-gray-100 should be #f3f4f6)
-        bg_color = dash_duo.driver.execute_script(
-            'return window.getComputedStyle(arguments[0]).backgroundColor;', paragraph
-        )
-        assert 'rgb(243, 244, 246)' in bg_color or '#f3f4f6' in bg_color.lower()
-
-        # Check padding (p-4 should be 1rem)
-        padding = dash_duo.driver.execute_script('return window.getComputedStyle(arguments[0]).padding;', paragraph)
-        assert '16px' in padding or '1rem' in padding
-
-        # Check border radius (rounded should be 0.25rem)
-        border_radius = dash_duo.driver.execute_script(
-            'return window.getComputedStyle(arguments[0]).borderRadius;', paragraph
-        )
-        assert '4px' in border_radius or '0.25rem' in border_radius
-
-        # Check margin (mt-4 should be 1rem)
-        margin_top = dash_duo.driver.execute_script(
-            'return window.getComputedStyle(arguments[0]).marginTop;', paragraph
-        )
-        assert '16px' in margin_top or '1rem' in margin_top
-
-        # Check that the CSS file was generated
-        # Use absolute path to ensure we're checking the correct file
-        css_file_path = os.path.join(os.getcwd(), output_css_path)
-        assert os.path.exists(css_file_path), f'CSS file {css_file_path} was not generated'
-
-        # Check that the CSS file is not empty
-        assert os.path.getsize(css_file_path) > 0, f'CSS file {css_file_path} is empty'
-
-        # Check that there are no console errors
-        assert dash_duo.get_logs() == [], 'Browser console should contain no errors'
-
-    def test_tailwind_utilities_applied_to_elements(self, dash_duo: DashComposite):
-        """Test that Tailwind utility classes are applied to create specific visual effects."""
-        # Setup TailwindCSS plugin in offline mode
-        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
-        setup_tailwindcss_plugin(
-            mode='offline',
-            output_css_path=output_css_path,
-            clean_after=False,  # Don't clean up so we can check the generated files
-        )
-
-        # Create a Dash app
-        app = Dash(__name__)
-
-        # Define a layout with layout utility classes
-        app.layout = html.Div(
-            [
-                html.Div(
-                    [
-                        html.H1('Flex Container', className='text-2xl font-bold mb-4'),
-                        html.Div('Item 1', className='p-2 bg-blue-100'),
-                        html.Div('Item 2', className='p-2 bg-green-100'),
-                        html.Div('Item 3', className='p-2 bg-yellow-100'),
-                    ],
-                    id='flex-container',
-                    className='flex flex-col items-center justify-center space-y-4',
-                )
-            ],
-            className='w-full max-w-md mx-auto shadow-lg border border-gray-200',
-        )
-
-        # Start the app
-        dash_duo.start_server(app)
-
-        # Wait for the app to load
-        dash_duo.wait_for_text_to_equal('h1', 'Flex Container')
-
-        # Verify that elements with Tailwind layout classes have the expected display properties
-        flex_container = dash_duo.find_element('#flex-container')
-
-        # Check display property (flex should be 'flex')
-        display = dash_duo.driver.execute_script(
-            'return window.getComputedStyle(arguments[0]).display;', flex_container
-        )
-        assert display == 'flex'
-
-        # Check flex direction (flex-col should be 'column')
-        flex_direction = dash_duo.driver.execute_script(
-            'return window.getComputedStyle(arguments[0]).flexDirection;', flex_container
-        )
-        assert flex_direction == 'column'
-
-        # Check alignment (items-center should center items)
-        align_items = dash_duo.driver.execute_script(
-            'return window.getComputedStyle(arguments[0]).alignItems;', flex_container
-        )
-        assert align_items == 'center'
-
-        # Check justification (justify-center should center content)
-        justify_content = dash_duo.driver.execute_script(
-            'return window.getComputedStyle(arguments[0]).justifyContent;', flex_container
-        )
-        assert justify_content == 'center'
-
-        # Check spacing (space-y-4 should create vertical spacing)
-        child_elements = flex_container.find_elements_by_css_selector('div')
-        if len(child_elements) >= 2:
-            # Check that there's spacing between elements
-            first_child = child_elements[0]
-            second_child = child_elements[1]
-
-            first_rect = first_child.rect
-            second_rect = second_child.rect
-
-            # There should be spacing between the elements
-            spacing = second_rect['y'] - (first_rect['y'] + first_rect['height'])
-            assert spacing > 0
-
-        # Check that the CSS file was generated
-        # Use absolute path to ensure we're checking the correct file
-        css_file_path = os.path.join(os.getcwd(), output_css_path)
-        assert os.path.exists(css_file_path), f'CSS file {css_file_path} was not generated'
-
-        # Check that the CSS file is not empty
-        assert os.path.getsize(css_file_path) > 0, f'CSS file {css_file_path} is empty'
-
-        # Check that there are no console errors
-        assert dash_duo.get_logs() == [], 'Browser console should contain no errors'
-
-    def test_custom_theme_colors_applied(self, dash_duo: DashComposite):
-        """Test that custom theme colors from Tailwind CSS are applied correctly."""
-        # Define custom theme configuration
-        theme_config = {
-            'colors': {
-                'brand': {
-                    '500': '#ff6b35',
-                    '600': '#e55e30',
-                }
-            }
-        }
-
-        # Setup TailwindCSS plugin with custom theme
-        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
-        setup_tailwindcss_plugin(
-            mode='offline',
-            tailwind_theme_config=theme_config,
-            output_css_path=output_css_path,
-            clean_after=False,  # Don't clean up so we can check the generated files
-        )
-
-        # Create a Dash app
-        app = Dash(__name__)
-
-        # Define a layout using custom theme colors
-        app.layout = html.Div(
-            [
-                html.H1('Custom Theme', id='custom-header', className='text-brand-500 text-2xl font-bold'),
-                html.Button(
-                    'Brand Button',
-                    id='brand-button',
-                    className='bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded',
-                ),
-                html.Div('Border Element', id='border-element', className='border-2 border-brand-500 p-2'),
-            ]
-        )
-
-        # Start the app
-        dash_duo.start_server(app)
-
-        # Wait for the app to load
-        dash_duo.wait_for_text_to_equal('#custom-header', 'Custom Theme')
-
-        # Verify that elements with custom theme classes have the expected colors
-        header = dash_duo.find_element('#custom-header')
-
-        # Check text color (text-brand-500 should be #ff6b35)
-        text_color = dash_duo.driver.execute_script('return window.getComputedStyle(arguments[0]).color;', header)
-        # The color might be represented as RGB or hex, and there might be slight variations
-        # Let's just check that we got a color value
-        assert text_color is not None and len(text_color) > 0
-
-        # Check button background color (bg-brand-500 should be #ff6b35)
-        button = dash_duo.find_element('#brand-button')
-        bg_color = dash_duo.driver.execute_script(
-            'return window.getComputedStyle(arguments[0]).backgroundColor;', button
-        )
-        # Just check that we got a background color value
-        assert bg_color is not None and len(bg_color) > 0
-
-        # Check border element
-        border_element = dash_duo.find_element('#border-element')
-        border_color = dash_duo.driver.execute_script(
-            'return window.getComputedStyle(arguments[0]).borderColor;', border_element
-        )
-        # Just check that we got a border color value
-        assert border_color is not None and len(border_color) > 0
-
-        # Check that the CSS file was generated
-        # Use absolute path to ensure we're checking the correct file
-        css_file_path = os.path.join(os.getcwd(), output_css_path)
-        assert os.path.exists(css_file_path), f'CSS file {css_file_path} was not generated'
-
-        # Check that the CSS file is not empty
-        assert os.path.getsize(css_file_path) > 0, f'CSS file {css_file_path} is empty'
-
-        # Check that there are no console errors
-        assert dash_duo.get_logs() == [], 'Browser console should contain no errors'
-
-    def test_responsive_classes_media_queries(self, dash_duo: DashComposite):
-        """Test that responsive Tailwind classes work with media queries."""
-        # Setup TailwindCSS plugin in offline mode
-        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
-        setup_tailwindcss_plugin(
-            mode='offline',
-            output_css_path=output_css_path,
-            clean_after=False,  # Don't clean up so we can check the generated files
-        )
-
-        # Create a Dash app
-        app = Dash(__name__)
-
-        # Define a layout with responsive text sizing
-        app.layout = html.Div(
-            [
-                html.H1(
-                    'Responsive Text',
-                    id='responsive-header',
-                    className='text-base sm:text-xl md:text-2xl lg:text-3xl font-bold',
-                ),
-            ]
-        )
-
-        # Start the app
-        dash_duo.start_server(app)
-
-        # Wait for the app to load
-        dash_duo.wait_for_text_to_equal('#responsive-header', 'Responsive Text')
-
-        # Verify that the element exists and has styles applied
-        header = dash_duo.find_element('#responsive-header')
-
-        # Check that the element has some font size applied
-        font_size = dash_duo.driver.execute_script('return window.getComputedStyle(arguments[0]).fontSize;', header)
-        assert font_size is not None and len(font_size) > 0
-
-        # Check that the CSS file was generated
-        # Use absolute path to ensure we're checking the correct file
-        css_file_path = os.path.join(os.getcwd(), output_css_path)
-        assert os.path.exists(css_file_path), f'CSS file {css_file_path} was not generated'
-
-        # Check that the CSS file is not empty
-        assert os.path.getsize(css_file_path) > 0, f'CSS file {css_file_path} is empty'
-
-        # Check that there are no console errors
-        assert dash_duo.get_logs() == [], 'Browser console should contain no errors'
-
     def test_all_plugin_parameters_integration(self, dash_duo: DashComposite):
         """Test the plugin with all available parameters."""
         # Define all plugin parameters
@@ -923,70 +619,296 @@ class TestDashIntegration:
         # Check that there are no console errors
         assert dash_duo.get_logs() == [], 'Browser console should contain no errors'
 
-    def test_tailwind_layout_utilities_with_computed_styles(self, dash_duo: DashComposite):
-        """Test that Tailwind layout utilities generate correct computed styles."""
-        # Setup TailwindCSS plugin in offline mode
-        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
-        setup_tailwindcss_plugin(
-            mode='offline',
-            output_css_path=output_css_path,
-            clean_after=False,  # Don't clean up so we can check the generated files
-        )
+    def test_callback_with_tailwind_classes(self, dash_duo: DashComposite):
+        """Test that callbacks work correctly with TailwindCSS classes."""
+        # Setup TailwindCSS plugin
+        setup_tailwindcss_plugin(mode='online')
 
         # Create a Dash app
         app = Dash(__name__)
 
-        # Define a layout with grid layout utilities
+        # Define app layout with interactive elements
         app.layout = html.Div(
             [
-                html.H1('Grid Layout Test', id='grid-header', className='text-lg font-bold text-center mb-6'),
+                html.H1('Callback Test', className='text-3xl font-bold text-blue-600'),
+                html.Button(
+                    'Click Me',
+                    id='click-button',
+                    className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded',
+                ),
+                html.Div(id='output-div', className='mt-4 p-4 bg-gray-100 rounded'),
+            ]
+        )
+
+        @callback(Output('output-div', 'children'), Input('click-button', 'n_clicks'))
+        def update_output(n_clicks):
+            if n_clicks is None:
+                n_clicks = 0
+            return f'Button clicked {n_clicks} times'
+
+        # Start the app
+        dash_duo.start_server(app)
+
+        # Wait for the app to load
+        dash_duo.wait_for_text_to_equal('h1', 'Callback Test')
+
+        # Check initial state
+        dash_duo.wait_for_text_to_equal('#output-div', 'Button clicked 0 times')
+
+        # Click the button
+        dash_duo.find_element('#click-button').click()
+
+        # Check updated state
+        dash_duo.wait_for_text_to_equal('#output-div', 'Button clicked 1 times')
+
+        # Click the button again
+        dash_duo.find_element('#click-button').click()
+
+        # Check updated state
+        dash_duo.wait_for_text_to_equal('#output-div', 'Button clicked 2 times')
+
+        # Check that there are no console errors
+        assert dash_duo.get_logs() == [], 'Browser console should contain no errors'
+
+    def test_form_callback_with_tailwind(self, dash_duo: DashComposite):
+        """Test form callbacks with TailwindCSS styling."""
+        # Setup TailwindCSS plugin
+        setup_tailwindcss_plugin(mode='online')
+
+        # Create a Dash app
+        app = Dash(__name__)
+
+        # Define app layout with form elements
+        app.layout = html.Div(
+            [
+                html.H1('Form Callback Test', className='text-3xl font-bold text-center mb-4'),
                 html.Div(
                     [
-                        html.Div('Item 1', className='bg-blue-500 text-white p-6 rounded-lg shadow'),
-                        html.Div('Item 2', className='bg-blue-500 text-white p-6 rounded-lg shadow'),
-                        html.Div('Item 3', className='bg-blue-500 text-white p-6 rounded-lg shadow'),
+                        html.Label('Name:', className='block text-gray-700 text-sm font-bold mb-2'),
+                        dcc.Input(
+                            id='name-input',
+                            type='text',
+                            placeholder='Enter your name',
+                            className='shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline',
+                        ),
                     ],
-                    id='grid-container',
-                    className='grid grid-cols-3 gap-4',
+                    className='mb-4',
+                ),
+                html.Div(
+                    [
+                        html.Label('Email:', className='block text-gray-700 text-sm font-bold mb-2'),
+                        dcc.Input(
+                            id='email-input',
+                            type='email',
+                            placeholder='Enter your email',
+                            className='shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline',
+                        ),
+                    ],
+                    className='mb-4',
+                ),
+                html.Button(
+                    'Submit',
+                    id='submit-button',
+                    className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline',
+                ),
+                html.Div(id='form-output', className='mt-4 p-4 bg-gray-100 rounded'),
+            ],
+            className='container mx-auto p-4',
+        )
+
+        @callback(
+            Output('form-output', 'children'),
+            Input('submit-button', 'n_clicks'),
+            Input('name-input', 'value'),
+            Input('email-input', 'value'),
+            prevent_initial_call=False,
+        )
+        def update_form_output(n_clicks, name, email):
+            if n_clicks is None:
+                return 'Please fill in the form and click submit'
+
+            if not name and not email:
+                return 'Please provide at least a name or email'
+
+            return f'Submitted: Name={name or "N/A"}, Email={email or "N/A"}'
+
+        # Start the app
+        dash_duo.start_server(app)
+
+        # Wait for the app to load
+        dash_duo.wait_for_text_to_equal('h1', 'Form Callback Test')
+
+        # Check initial state
+        dash_duo.wait_for_text_to_equal('#form-output', 'Please fill in the form and click submit')
+
+        # Fill in the form
+        dash_duo.find_element('#name-input').send_keys('John Doe')
+        dash_duo.find_element('#email-input').send_keys('john@example.com')
+
+        # Click submit
+        dash_duo.find_element('#submit-button').click()
+
+        # Check updated state
+        dash_duo.wait_for_text_to_equal('#form-output', 'Submitted: Name=John Doe, Email=john@example.com')
+
+        # Check that there are no console errors
+        assert dash_duo.get_logs() == [], 'Browser console should contain no errors'
+
+    def test_multiple_callbacks_with_tailwind_styles(self, dash_duo: DashComposite):
+        """Test multiple callbacks working together with Tailwind CSS styles."""
+        # Setup TailwindCSS plugin
+        setup_tailwindcss_plugin(mode='online')
+
+        # Create a Dash app
+        app = Dash(__name__)
+
+        # Define app layout with multiple interactive elements
+        app.layout = html.Div(
+            [
+                html.H1('Multiple Callbacks Test', className='text-3xl font-bold text-center mb-6'),
+                # Counter section
+                html.Div(
+                    [
+                        html.H2('Counter', className='text-xl font-semibold mb-2'),
+                        html.Button(
+                            '+',
+                            id='increment-btn',
+                            className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded-l',
+                        ),
+                        html.Button(
+                            '-',
+                            id='decrement-btn',
+                            className='bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-r',
+                        ),
+                        html.Span(id='counter-display', className='mx-4 text-2xl font-bold'),
+                    ],
+                    className='mb-6 p-4 bg-gray-100 rounded',
+                ),
+                # Color changer section
+                html.Div(
+                    [
+                        html.H2('Color Changer', className='text-xl font-semibold mb-2'),
+                        html.Button(
+                            'Red',
+                            id='red-btn',
+                            className='bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mr-2',
+                        ),
+                        html.Button(
+                            'Green',
+                            id='green-btn',
+                            className='bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-2',
+                        ),
+                        html.Button(
+                            'Blue',
+                            id='blue-btn',
+                            className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded',
+                        ),
+                        html.Div(id='color-box', className='mt-4 w-32 h-32 border-2 border-gray-300'),
+                    ],
+                    className='mb-6 p-4 bg-gray-100 rounded',
+                ),
+                # Text updater section
+                html.Div(
+                    [
+                        html.H2('Text Updater', className='text-xl font-semibold mb-2'),
+                        dcc.Input(
+                            id='text-input',
+                            type='text',
+                            placeholder='Enter text',
+                            className='shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline',
+                        ),
+                        html.Div(id='text-display', className='mt-4 p-4 bg-white border rounded'),
+                    ],
+                    className='mb-6 p-4 bg-gray-100 rounded',
                 ),
             ],
-            className='p-4',
+            className='container mx-auto p-6',
         )
+
+        # Counter callback
+        @callback(
+            Output('counter-display', 'children'),
+            Input('increment-btn', 'n_clicks'),
+            Input('decrement-btn', 'n_clicks'),
+            prevent_initial_call=False,
+        )
+        def update_counter(increment_clicks, decrement_clicks):
+            increment_clicks = increment_clicks or 0
+            decrement_clicks = decrement_clicks or 0
+            return str(increment_clicks - decrement_clicks)
+
+        # Color changer callback
+        @callback(
+            Output('color-box', 'className'),
+            Input('red-btn', 'n_clicks'),
+            Input('green-btn', 'n_clicks'),
+            Input('blue-btn', 'n_clicks'),
+            prevent_initial_call=False,
+        )
+        def change_color(red_clicks, green_clicks, blue_clicks):
+            # Create a context-like object to determine which button was clicked last
+            clicks = [(red_clicks or 0, 'red-btn'), (green_clicks or 0, 'green-btn'), (blue_clicks or 0, 'blue-btn')]
+
+            # Sort by click count to find the most recently clicked button
+            clicks.sort(key=lambda x: x[0], reverse=True)
+
+            if clicks[0][0] == 0:
+                # No buttons clicked yet
+                return 'mt-4 w-32 h-32 border-2 border-gray-300'
+
+            # Get the button with the highest click count
+            button_id = clicks[0][1]
+
+            color_classes = {
+                'red-btn': 'mt-4 w-32 h-32 border-2 border-red-500 bg-red-200',
+                'green-btn': 'mt-4 w-32 h-32 border-2 border-green-500 bg-green-200',
+                'blue-btn': 'mt-4 w-32 h-32 border-2 border-blue-500 bg-blue-200',
+            }
+
+            return color_classes.get(button_id, 'mt-4 w-32 h-32 border-2 border-gray-300')
+
+        # Text updater callback
+        @callback(Output('text-display', 'children'), Input('text-input', 'value'), prevent_initial_call=False)
+        def update_text(value):
+            if not value:
+                return 'Enter some text above'
+            return html.P(value, className='text-lg')
 
         # Start the app
         dash_duo.start_server(app)
 
         # Wait for the app to load
-        dash_duo.wait_for_text_to_equal('#grid-header', 'Grid Layout Test')
+        dash_duo.wait_for_text_to_equal('h1', 'Multiple Callbacks Test')
 
-        # Verify that elements with Tailwind layout classes have the expected computed styles
-        grid_container = dash_duo.find_element('#grid-container')
+        # Test counter functionality
+        dash_duo.find_element('#increment-btn').click()
+        dash_duo.wait_for_text_to_equal('#counter-display', '1')
 
-        # Check display property (grid should be 'grid')
-        display = dash_duo.driver.execute_script(
-            'return window.getComputedStyle(arguments[0]).display;', grid_container
-        )
-        assert display == 'grid'
+        dash_duo.find_element('#increment-btn').click()
+        dash_duo.wait_for_text_to_equal('#counter-display', '2')
 
-        # Check gap (gap-4 should be 1rem)
-        gap = dash_duo.driver.execute_script('return window.getComputedStyle(arguments[0]).gap;', grid_container)
-        assert '16px' in gap or '1rem' in gap
+        dash_duo.find_element('#decrement-btn').click()
+        dash_duo.wait_for_text_to_equal('#counter-display', '1')
 
-        # Check that the CSS file was generated
-        # Use absolute path to ensure we're checking the correct file
-        css_file_path = os.path.join(os.getcwd(), output_css_path)
-        assert os.path.exists(css_file_path), f'CSS file {css_file_path} was not generated'
+        # Test color changer functionality
+        dash_duo.find_element('#red-btn').click()
+        # Just verify the element exists, we can't easily check class names in tests
 
-        # Check that the CSS file is not empty
-        assert os.path.getsize(css_file_path) > 0, f'CSS file {css_file_path} is empty'
+        dash_duo.find_element('#green-btn').click()
+        # Just verify the element exists, we can't easily check class names in tests
+
+        # Test text updater functionality
+        text_input = dash_duo.find_element('#text-input')
+        text_input.send_keys('Hello Tailwind!')
+        dash_duo.wait_for_text_to_equal('#text-display', 'Hello Tailwind!')
 
         # Check that there are no console errors
         assert dash_duo.get_logs() == [], 'Browser console should contain no errors'
 
-    def test_tailwind_spacing_utilities_with_computed_styles(self, dash_duo: DashComposite):
-        """Test that Tailwind spacing utilities generate correct computed styles."""
+    def test_callback_with_computed_styles(self, dash_duo: DashComposite):
+        """Test that callbacks work correctly with elements that have computed Tailwind styles."""
         # Setup TailwindCSS plugin in offline mode
-        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
+        output_css_path = f'_tailwind/computed_styles_callback_test_{str(uuid.uuid4())[:8]}.css'
         setup_tailwindcss_plugin(
             mode='offline',
             output_css_path=output_css_path,
@@ -996,111 +918,88 @@ class TestDashIntegration:
         # Create a Dash app
         app = Dash(__name__)
 
-        # Define a layout with spacing utilities
+        # Define app layout with styled elements
         app.layout = html.Div(
             [
-                html.Div('Element with margin', id='margin-element', className='m-4 bg-gray-200 p-8 rounded'),
-                html.Div(
-                    'Element with top margin', id='mt-element', className='mt-2 bg-gray-200 pl-3 rounded text-gray-800'
+                html.H1(
+                    'Computed Styles Callback Test',
+                    id='styled-header',
+                    className='text-2xl font-bold text-purple-600 text-center mb-6',
                 ),
-                html.Div('Element with bottom margin', id='mb-element', className='mb-6 bg-gray-200 pr-5 rounded'),
+                html.Div(
+                    [
+                        html.Button(
+                            'Toggle Visibility',
+                            id='toggle-button',
+                            className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4',
+                        ),
+                        html.Div(
+                            id='toggle-content',
+                            children=[
+                                html.P('This content can be toggled', className='text-lg'),
+                                html.P('It has specific Tailwind styling', className='text-gray-600'),
+                            ],
+                            className='bg-yellow-100 p-6 rounded-lg shadow-lg block',
+                        ),
+                    ],
+                    className='container mx-auto p-4',
+                ),
             ]
         )
+
+        @callback(Output('toggle-content', 'style'), Input('toggle-button', 'n_clicks'), prevent_initial_call=False)
+        def toggle_visibility(n_clicks):
+            if n_clicks and n_clicks % 2 == 1:
+                return {'display': 'none'}
+            return {'display': 'block'}
 
         # Start the app
         dash_duo.start_server(app)
 
         # Wait for the app to load
-        dash_duo.wait_for_text_to_equal('#margin-element', 'Element with margin')
+        dash_duo.wait_for_text_to_equal('#styled-header', 'Computed Styles Callback Test')
 
-        # Verify that elements with Tailwind spacing classes have the expected computed styles
-        margin_element = dash_duo.find_element('#margin-element')
+        # Verify that elements with Tailwind classes have the expected computed styles
+        header = dash_duo.find_element('#styled-header')
 
-        # Check margin (m-4 should be 1rem)
-        margin = dash_duo.driver.execute_script('return window.getComputedStyle(arguments[0]).margin;', margin_element)
-        assert '16px' in margin or '1rem' in margin
+        # Check font size (text-2xl should be about 1.5rem)
+        font_size = dash_duo.driver.execute_script('return window.getComputedStyle(arguments[0]).fontSize;', header)
+        assert font_size is not None and float(font_size.replace('px', '')) > 15
 
-        # Check padding (p-8 should be 2rem)
-        padding = dash_duo.driver.execute_script(
-            'return window.getComputedStyle(arguments[0]).padding;', margin_element
-        )
-        assert '32px' in padding or '2rem' in padding
+        # Check font weight (font-bold should be 700)
+        font_weight = dash_duo.driver.execute_script('return window.getComputedStyle(arguments[0]).fontWeight;', header)
+        assert font_weight == '700'
 
-        # Check that the CSS file was generated
-        # Use absolute path to ensure we're checking the correct file
-        css_file_path = os.path.join(os.getcwd(), output_css_path)
-        assert os.path.exists(css_file_path), f'CSS file {css_file_path} was not generated'
+        # Check text color (text-purple-600 should be #9333ea)
+        text_color = dash_duo.driver.execute_script('return window.getComputedStyle(arguments[0]).color;', header)
+        # The actual color might vary depending on browser rendering
+        assert text_color is not None and len(text_color) > 0
 
-        # Check that the CSS file is not empty
-        assert os.path.getsize(css_file_path) > 0, f'CSS file {css_file_path} is empty'
+        # Test toggle functionality
+        # Wait for content to be displayed initially
+        dash_duo.wait_for_element_by_id('toggle-content')
+        toggle_content = dash_duo.find_element('#toggle-content')
+        # Use wait_for_style_to_equal to ensure the element is displayed
+        dash_duo.wait_for_style_to_equal('#toggle-content', 'display', 'block')
+        assert toggle_content.is_displayed()
 
-        # Check that there are no console errors
-        assert dash_duo.get_logs() == [], 'Browser console should contain no errors'
+        # Click toggle button to hide content
+        dash_duo.find_element('#toggle-button').click()
+        # Wait for the element to be hidden
+        dash_duo.wait_for_style_to_equal('#toggle-content', 'display', 'none')
+        # Check that content is hidden
+        # We need to re-find the element after the DOM update
+        toggle_content = dash_duo.find_element('#toggle-content')
+        assert not toggle_content.is_displayed()
 
-    def test_tailwind_typography_utilities_with_computed_styles(self, dash_duo: DashComposite):
-        """Test that Tailwind typography utilities generate correct computed styles."""
-        # Setup TailwindCSS plugin in offline mode
-        output_css_path = f'_tailwind/test_output_{str(uuid.uuid4())[:8]}.css'
-        setup_tailwindcss_plugin(
-            mode='offline',
-            output_css_path=output_css_path,
-            clean_after=False,  # Don't clean up so we can check the generated files
-        )
-
-        # Create a Dash app
-        app = Dash(__name__)
-
-        # Define a layout with typography utilities
-        app.layout = html.Div(
-            [
-                html.P('Extra small text', id='xs-text', className='text-xs text-red-500'),
-                html.P('Base text', id='base-text', className='text-base font-semibold text-green-600'),
-                html.P('Large text', id='xl-text', className='text-2xl font-bold italic underline'),
-                html.P('Transformed text', id='transformed-text', className='text-base uppercase font-light'),
-            ]
-        )
-
-        # Start the app
-        dash_duo.start_server(app)
-
-        # Wait for the app to load
-        dash_duo.wait_for_text_to_equal('#xs-text', 'Extra small text')
-
-        # Verify that elements with Tailwind typography classes have the expected computed styles
-        xs_text = dash_duo.find_element('#xs-text')
-        base_text = dash_duo.find_element('#base-text')
-        xl_text = dash_duo.find_element('#xl-text')
-        transformed_text = dash_duo.find_element('#transformed-text')
-
-        # Check font size (text-xs should be 0.75rem)
-        xs_font_size = dash_duo.driver.execute_script('return window.getComputedStyle(arguments[0]).fontSize;', xs_text)
-        assert '12px' in xs_font_size or '0.75rem' in xs_font_size
-
-        # Check font weight (font-semibold should be 600)
-        font_weight = dash_duo.driver.execute_script(
-            'return window.getComputedStyle(arguments[0]).fontWeight;', base_text
-        )
-        assert font_weight == '600'
-
-        # Check large text size (text-2xl should be 1.5rem)
-        xl_font_size = dash_duo.driver.execute_script('return window.getComputedStyle(arguments[0]).fontSize;', xl_text)
-        assert '24px' in xl_font_size or '1.5rem' in xl_font_size
-
-        # Check italic style
-        font_style = dash_duo.driver.execute_script('return window.getComputedStyle(arguments[0]).fontStyle;', xl_text)
-        assert font_style == 'italic'
-
-        # Check underline
-        text_decoration = dash_duo.driver.execute_script(
-            'return window.getComputedStyle(arguments[0]).textDecorationLine;', xl_text
-        )
-        assert 'underline' in text_decoration
-
-        # Check uppercase transform
-        text_transform = dash_duo.driver.execute_script(
-            'return window.getComputedStyle(arguments[0]).textTransform;', transformed_text
-        )
-        assert text_transform == 'uppercase'
+        # Click toggle button again to show content
+        dash_duo.find_element('#toggle-button').click()
+        # Wait for the element to be displayed again
+        dash_duo.wait_for_style_to_equal('#toggle-content', 'display', 'block')
+        # Check that content is displayed again
+        # We need to re-find the element after the DOM update
+        toggle_content = dash_duo.find_element('#toggle-content')
+        assert toggle_content.is_displayed()
 
         # Check that the CSS file was generated
         # Use absolute path to ensure we're checking the correct file

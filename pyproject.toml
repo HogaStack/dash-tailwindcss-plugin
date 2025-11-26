@@ -20,10 +20,13 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Framework :: Dash",
 ]
 dependencies = [
     "dash>=3.0.3",
+    "py-node-manager>=0.1.1",
 ]
 
 [project.urls]
@@ -33,8 +36,7 @@ Repository = "https://github.com/HogaStack/dash-tailwindcss-plugin"
 Issues = "https://github.com/HogaStack/dash-tailwindcss-plugin/issues"
 
 [project.optional-dependencies]
-dev = ["build", "twine"]
-test = ["pytest>=6.0"]
+dev = ["build", "dash[testing]>=3.0.3", "pytest", "pytest-cov", "twine"]
 
 [project.scripts]
 dash-tailwindcss-plugin = "dash_tailwindcss_plugin.cli:main"

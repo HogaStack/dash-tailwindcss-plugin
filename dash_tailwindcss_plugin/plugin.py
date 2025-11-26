@@ -1,10 +1,15 @@
+import logging
 import os
 import time
 import uuid
 from dash import Dash, hooks
 from flask import Response, send_file
 from typing import Any, Dict, List, Literal, Optional
-from .utils import dict_to_js_object, logger, NodeManager, TailwindCommand
+from py_node_manager import get_logger
+from .utils import dict_to_js_object, TailwindCommand
+
+
+logger = get_logger(logging.getLogger(__name__))
 
 
 class _TailwindCSSPlugin:
@@ -26,7 +31,7 @@ class _TailwindCSSPlugin:
         clean_after: bool = True,
         skip_build_if_recent: bool = True,
         skip_build_time_threshold: int = 5,
-    ):
+    ) -> None:
         """
         Initialize Tailwind CSS plugin with specified configuration.
 
@@ -45,18 +50,12 @@ class _TailwindCSSPlugin:
             clean_after (bool): Whether to clean up generated files after build
             skip_build_if_recent (bool): Whether to skip build if CSS file was recently generated
             skip_build_time_threshold (int): Time threshold in seconds to consider CSS file as recent
+
+        Returns:
+            None
         """
         if mode == 'offline':
-            node_manager = NodeManager(
-                download_node=download_node,
-                node_version=node_version,
-                is_cli=False,
-            )
             self.tailwind_command = TailwindCommand(
-                node_path=node_manager.node_path,
-                node_env=node_manager.node_env,
-                npm_path=node_manager.npm_path,
-                npx_path=node_manager.npx_path,
                 tailwind_version=tailwind_version,
                 content_path=content_path,
                 plugin_tmp_dir=plugin_tmp_dir,
@@ -64,6 +63,8 @@ class _TailwindCSSPlugin:
                 output_css_path=output_css_path,
                 config_js_path=config_js_path,
                 is_cli=False,
+                download_node=download_node,
+                node_version=node_version,
                 theme_config=tailwind_theme_config,
             )
         self.mode = mode
@@ -88,6 +89,124 @@ class _TailwindCSSPlugin:
             )
             self.cdn_url = new_cdn_url
 
+    def _process_online_html(self, index_string: str) -> str:
+        """
+        Process HTML string for online mode by adding Tailwind CSS CDN script.
+
+        Args:
+            index_string (str): Original HTML string
+
+        Returns:
+            str: Modified HTML string with Tailwind CSS CDN script
+        """
+        # Create Tailwind CSS CDN script with theme configuration
+        tailwind_script = f'<script src="{self.cdn_url}"></script>\n'
+
+        # Add theme configuration script if provided
+        if self.tailwind_theme_config:
+            # Convert Python dict to JavaScript object using the utility function
+            theme_config_js = dict_to_js_object(self.tailwind_theme_config)
+
+            # Add configuration script
+            config_script = f"""<script>
+  tailwind.config = {{
+    theme: {{
+      extend: {theme_config_js}
+    }}
+  }};
+</script>
+"""
+            tailwind_script += config_script
+
+        # Look for the closing head tag and insert the script before it
+        if '</head>' in index_string:
+            index_string = index_string.replace('</head>', f'{tailwind_script}</head>')
+        # If no head tag, look for opening body tag and insert before it
+        elif '<body>' in index_string:
+            index_string = index_string.replace('<body>', f'<head>\n{tailwind_script}</head>\n<body>')
+        # If neither head nor body tag, append to the beginning
+        else:
+            index_string = f'<head>\n{tailwind_script}</head>\n' + index_string
+
+        return index_string
+
+    def _should_skip_build(self) -> bool:
+        """
+        Check if the build should be skipped based on the skip_build_if_recent setting
+
+        Returns:
+            bool: True if the build should be skipped, False otherwise
+        """
+        # Check if CSS file exists and was generated recently (within threshold seconds)
+        if self.skip_build_if_recent and os.path.exists(self.output_css_path):
+            file_mod_time = os.path.getmtime(self.output_css_path)
+            current_time = time.time()
+            if current_time - file_mod_time < self.skip_build_time_threshold:
+                logger.info(
+                    f'⚡ CSS file {self.output_css_path} was generated recently '
+                    f'({current_time - file_mod_time:.2f}s ago), skipping build...'
+                )
+                return True
+        return False
+
+    def _build_tailwindcss(self) -> None:
+        """
+        Build Tailwind CSS using Tailwind CLI
+
+        Returns:
+            None
+        """
+        built = self.tailwind_command.init().install().build()
+        if self.clean_after:
+            built.clean()
+
+    def _serve_tailwindcss(self) -> Response:
+        """
+        Serve Tailwind CSS file.
+
+        Returns:
+            Response: CSS file response or 404 if file not found
+        """
+        # Check if the CSS file exists
+        if os.path.exists(self.output_css_path):
+            try:
+                # Return the CSS file
+                return send_file(self.output_css_path, mimetype='text/css')
+            except Exception:
+                # If there's an error return the file, return the content directly
+                with open(self.output_css_path, 'r', encoding='utf-8') as f:
+                    css_content = f.read()
+                return Response(css_content, mimetype='text/css')
+        else:
+            # Return 404 if file not found
+            return Response('CSS file not found', status=404, mimetype='text/plain')
+
+    def _process_offline_html(self, built_tailwindcss_link: str, index_string: str) -> str:
+        """
+        Process HTML string for offline mode by adding Tailwind CSS link.
+
+        Args:
+            built_tailwindcss_link (str): Link to the built Tailwind CSS file
+            index_string (str): Original HTML string
+
+        Returns:
+            str: Modified HTML string with Tailwind CSS link
+        """
+        # Insert Tailwind CSS link into the head section
+        tailwindcss_link = f'<link rel="stylesheet" href="{built_tailwindcss_link}"></link>\n'
+
+        # Look for the closing head tag and insert the link before it
+        if '</head>' in index_string:
+            index_string = index_string.replace('</head>', f'{tailwindcss_link}</head>')
+        # If no head tag, look for opening body tag and insert before it
+        elif '<body>' in index_string:
+            index_string = index_string.replace('<body>', f'<head>\n{tailwindcss_link}</head>\n<body>')
+        # If neither head nor body tag, append to the beginning
+        else:
+            index_string = f'<head>\n{tailwindcss_link}</head>\n' + index_string
+
+        return index_string
+
     def setup_online_mode(self):
         """
         Setup Tailwind CSS using CDN
@@ -98,36 +217,7 @@ class _TailwindCSSPlugin:
 
         @hooks.index()
         def add_tailwindcss_cdn(index_string: str) -> str:
-            # Create Tailwind CSS CDN script with theme configuration
-            tailwind_script = f'<script src="{self.cdn_url}"></script>\n'
-
-            # Add theme configuration script if provided
-            if self.tailwind_theme_config:
-                # Convert Python dict to JavaScript object using the utility function
-                theme_config_js = dict_to_js_object(self.tailwind_theme_config)
-
-                # Add configuration script
-                config_script = f"""<script>
-  tailwind.config = {{
-    theme: {{
-      extend: {theme_config_js}
-    }}
-  }};
-</script>
-"""
-                tailwind_script += config_script
-
-            # Look for the closing head tag and insert the script before it
-            if '</head>' in index_string:
-                index_string = index_string.replace('</head>', f'{tailwind_script}</head>')
-            # If no head tag, look for opening body tag and insert before it
-            elif '<body>' in index_string:
-                index_string = index_string.replace('<body>', f'<head>\n{tailwind_script}</head>\n<body>')
-            # If neither head nor body tag, append to the beginning
-            else:
-                index_string = f'<head>\n{tailwind_script}</head>\n' + index_string
-
-            return index_string
+            return self._process_online_html(index_string)
 
     def setup_offline_mode(self):
         """
@@ -146,62 +236,17 @@ class _TailwindCSSPlugin:
         # Generate Tailwind CSS on app startup
         @hooks.setup(priority=3)
         def generate_tailwindcss(app: Dash):
-            # Check if CSS file exists and was generated recently (within threshold seconds)
-            if self.skip_build_if_recent and os.path.exists(self.output_css_path):
-                file_mod_time = os.path.getmtime(self.output_css_path)
-                current_time = time.time()
-                if current_time - file_mod_time < self.skip_build_time_threshold:
-                    logger.info(
-                        f'⚡ CSS file {self.output_css_path} was generated recently '
-                        f'({current_time - file_mod_time:.2f}s ago), skipping build...'
-                    )
-                    return
-
+            if self._should_skip_build():
+                return
             self._build_tailwindcss()
 
         @hooks.route(name=built_tailwindcss_link, methods=('GET',), priority=2)
         def serve_tailwindcss():
-            # Check if the CSS file exists
-            if os.path.exists(self.output_css_path):
-                try:
-                    # Return the CSS file
-                    return send_file(self.output_css_path, mimetype='text/css')
-                except Exception:
-                    # If there's an error return the file, return the content directly
-                    with open(self.output_css_path, 'r', encoding='utf-8') as f:
-                        css_content = f.read()
-                    return Response(css_content, mimetype='text/css')
-            else:
-                # Return 404 if file not found
-                return Response('CSS file not found', status=404, mimetype='text/plain')
+            return self._serve_tailwindcss()
 
         @hooks.index(priority=1)
         def add_tailwindcss_link(index_string: str) -> str:
-            # Insert Tailwind CSS link into the head section
-            tailwindcss_link = f'<link rel="stylesheet" href="{built_tailwindcss_link}"></link>\n'
-
-            # Look for the closing head tag and insert the link before it
-            if '</head>' in index_string:
-                index_string = index_string.replace('</head>', f'{tailwindcss_link}</head>')
-            # If no head tag, look for opening body tag and insert before it
-            elif '<body>' in index_string:
-                index_string = index_string.replace('<body>', f'<head>\n{tailwindcss_link}</head>\n<body>')
-            # If neither head nor body tag, append to the beginning
-            else:
-                index_string = f'<head>\n{tailwindcss_link}</head>\n' + index_string
-
-            return index_string
-
-    def _build_tailwindcss(self):
-        """
-        Build Tailwind CSS using Tailwind CLI
-
-        Returns:
-            None
-        """
-        built = self.tailwind_command.init().install().build()
-        if self.clean_after:
-            built.clean()
+            return self._process_offline_html(built_tailwindcss_link, index_string)
 
 
 def setup_tailwindcss_plugin(
