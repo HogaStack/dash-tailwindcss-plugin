@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dash-tailwindcss-plugin"
-version = "0.1.5"
+version = "0.1.6"
 description = "A Dash plugin for integrating TailwindCSS using Dash 3.x hooks"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -36,7 +36,14 @@ Repository = "https://github.com/HogaStack/dash-tailwindcss-plugin"
 Issues = "https://github.com/HogaStack/dash-tailwindcss-plugin/issues"
 
 [project.optional-dependencies]
-dev = ["build", "dash[testing]>=3.0.3", "pytest", "pytest-cov", "twine"]
+dev = [
+    "build",
+    "dash[testing]>=3.0.3",
+    "py-node-manager>=0.1.1",
+    "pytest",
+    "pytest-cov",
+    "twine",
+]
 
 [project.scripts]
 dash-tailwindcss-plugin = "dash_tailwindcss_plugin.cli:main"

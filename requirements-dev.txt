@@ -1,3 +1,6 @@
-dash[testing]
+build
+dash[testing]>=3.0.3
+py-node-manager>=0.1.1
 pytest
 pytest-cov
+twine
