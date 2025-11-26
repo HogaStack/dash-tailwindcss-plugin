@@ -1,12 +1,15 @@
 # Dash TailwindCSS Plugin
 
-[![GitHub](https://shields.io/badge/license-MIT-informational)](https://github.com/HogaStack/dash-tailwindcss-plugin/blob/main/LICENSE)
-[![PyPI](https://img.shields.io/pypi/v/dash-tailwindcss-plugin.svg?color=dark-green)](https://pypi.org/project/dash-tailwindcss-plugin/)
+A plugin for integrating TailwindCSS with Plotly Dash applications using Dash 3.x hooks. Supports both Tailwind CSS v3 and v4.
+
+[![Tests](https://github.com/HogaStack/dash-tailwindcss-plugin/workflows/Tests/badge.svg)](https://github.com/HogaStack/dash-tailwindcss-plugin/actions)
+[![Coverage](https://codecov.io/gh/HogaStack/dash-tailwindcss-plugin/branch/main/graph/badge.svg)](https://codecov.io/gh/HogaStack/dash-tailwindcss-plugin)
+[![Python Version](https://img.shields.io/pypi/pyversions/dash-tailwindcss-plugin)](https://pypi.org/project/dash-tailwindcss-plugin/)
+[![PyPI](https://img.shields.io/pypi/v/dash-tailwindcss-plugin)](https://pypi.org/project/dash-tailwindcss-plugin/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![GitHub](https://shields.io/badge/license-MIT-informational)](https://github.com/HogaStack/dash-tailwindcss-plugin/blob/main/LICENSE)
 
 English | [简体中文](./README-zh_CN.md)
-
-A plugin for integrating TailwindCSS with Plotly Dash applications using Dash 3.x hooks. Supports both Tailwind CSS v3 and v4.
 
 ## Features
 
@@ -34,16 +37,10 @@ Or for development:
 pip install -e .
 ```
 
-For development with test dependencies:
+For development with all dependencies (including test dependencies):
 
 ```bash
-pip install -e .[test]
-```
-
-For development with both development and test dependencies:
-
-```bash
-pip install -e .[dev,test]
+pip install -e .[dev]
 ```
 
 ## Usage
@@ -231,23 +228,24 @@ if __name__ == "__main__":
 
 ```bash
 dash-tailwindcss-plugin/
+├── .github/
+│   └── workflows/
+│       └── test.yml         # GitHub Actions workflow for testing
 ├── dash_tailwindcss_plugin/
 │   ├── __init__.py          # Exports main plugin function
 │   ├── plugin.py            # Main plugin implementation with _TailwindCSSPlugin class
 │   ├── cli.py               # Command-line interface with _TailwindCLI class
 │   └── utils.py             # Utility functions for Node.js management, file operations, etc.
 ├── tests/
-│   ├── test_plugin.py       # Unit tests for plugin core functionality
-│   ├── test_utils.py        # Unit tests for utility functions
+│   ├── README.md            # English test documentation
+│   ├── README-zh_CN.md      # Chinese test documentation
+│   ├── conftest.py          # Pytest configuration fixtures
 │   ├── test_cli.py          # Unit tests for CLI interface
-│   ├── test_integration.py  # Integration tests for build process
-│   ├── test_dash_simple.py  # Simple Dash integration tests (no browser required)
-│   ├── test_dash_integration.py  # Dash end-to-end integration tests (requires browser automation)
-│   └── test_dash_callbacks.py    # Dash callback and layout tests
+│   ├── test_dash_integration.py  # Dash end-to-end integration tests
+│   ├── test_plugin.py       # Unit tests for plugin core functionality
+│   └── test_utils.py        # Unit tests for utility functions
 ├── example_app.py           # Example Dash application
-├── requirements.txt         # Runtime dependencies
-├── requirements-test.txt    # Test dependencies
-├── setup.py                 # Setup script for installation
+├── requirements-dev.txt     # Development and test dependencies
 ├── pyproject.toml           # Build configuration
 ├── pytest.ini               # Pytest configuration
 ├── ruff.toml                # Ruff configuration (linting)
@@ -304,47 +302,24 @@ The plugin accepts the following parameters:
 ## Development
 
 1. Clone the repository
-2. Install dependencies: `pip install -r requirements.txt`
-3. Install test dependencies: `pip install -r requirements-test.txt`
-4. Install in development mode: `pip install -e .`
-5. Run example: `python example_app.py`
-
-### Optional Dependencies
-
-For development with test dependencies:
-
-```bash
-pip install -e .[test]
-```
-
-For development with both development and test dependencies:
-
-```bash
-pip install -e .[dev,test]
-```
+2. Install development dependencies: `pip install -r requirements-dev.txt`
+3. Install in development mode: `pip install -e .`
+4. Run example: `python example_app.py`
 
 ## Running Tests
 
-This project uses a layered testing approach:
-
-1. **Basic tests** - Run without browser automation (recommended for most cases)
-2. **Advanced tests** - Require browser automation for end-to-end testing
-
 ```bash
-# Install test dependencies
-pip install -r requirements-test.txt
+# Install development dependencies (includes test dependencies)
+pip install -r requirements-dev.txt
 
-# Run basic tests (no browser automation required)
-python -m pytest tests/test_plugin.py tests/test_utils.py tests/test_cli.py tests/test_integration.py tests/test_dash_simple.py
-
-# Run all tests (including those requiring browser automation)
+# Run all tests
 python -m pytest tests/
 
 # Run specific test files
 python -m pytest tests/test_plugin.py
 python -m pytest tests/test_utils.py
 python -m pytest tests/test_cli.py
-python -m pytest tests/test_dash_simple.py
+python -m pytest tests/test_dash_integration.py
 
 # Run tests with verbose output
 python -m pytest tests/ -v

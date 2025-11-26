@@ -1,12 +1,15 @@
-# Dash TailwindCSS 插件
-
-[![GitHub](https://shields.io/badge/license-MIT-informational)](https://github.com/HogaStack/dash-tailwindcss-plugin/blob/main/LICENSE)
-[![PyPI](https://img.shields.io/pypi/v/dash-tailwindcss-plugin.svg?color=dark-green)](https://pypi.org/project/dash-tailwindcss-plugin/)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-
-简体中文 | [English](./README.md)
+# Dash TailwindCSS Plugin
 
 一个用于将 TailwindCSS 集成到 Plotly Dash 应用程序中的插件，使用 Dash 3.x hooks。支持 Tailwind CSS v3 和 v4。
+
+[![Tests](https://github.com/HogaStack/dash-tailwindcss-plugin/workflows/Tests/badge.svg)](https://github.com/HogaStack/dash-tailwindcss-plugin/actions)
+[![Coverage](https://codecov.io/gh/HogaStack/dash-tailwindcss-plugin/branch/main/graph/badge.svg)](https://codecov.io/gh/HogaStack/dash-tailwindcss-plugin)
+[![Python Version](https://img.shields.io/pypi/pyversions/dash-tailwindcss-plugin)](https://pypi.org/project/dash-tailwindcss-plugin/)
+[![PyPI](https://img.shields.io/pypi/v/dash-tailwindcss-plugin)](https://pypi.org/project/dash-tailwindcss-plugin/)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![GitHub](https://shields.io/badge/license-MIT-informational)](https://github.com/HogaStack/dash-tailwindcss-plugin/blob/main/LICENSE)
+
+简体中文 | [English](./README.md)
 
 ## 功能特性
 
@@ -34,16 +37,10 @@ pip install dash-tailwindcss-plugin
 pip install -e .
 ```
 
-用于开发和测试依赖：
+用于开发和所有依赖（包括测试依赖）：
 
 ```bash
-pip install -e .[test]
-```
-
-用于开发和所有依赖：
-
-```bash
-pip install -e .[dev,test]
+pip install -e .[dev]
 ```
 
 ## 使用方法
@@ -231,23 +228,24 @@ if __name__ == "__main__":
 
 ```bash
 dash-tailwindcss-plugin/
+├── .github/
+│   └── workflows/
+│       └── test.yml         # GitHub Actions 测试工作流
 ├── dash_tailwindcss_plugin/
 │   ├── __init__.py          # 导出主插件函数
 │   ├── plugin.py            # 主插件实现，包含 _TailwindCSSPlugin 类
 │   ├── cli.py               # 命令行界面，包含 _TailwindCLI 类
 │   └── utils.py             # Node.js 管理、文件操作等实用函数
 ├── tests/
-│   ├── test_plugin.py       # 插件核心功能的单元测试
-│   ├── test_utils.py        # 实用函数的单元测试
+│   ├── README.md            # 英文测试文档
+│   ├── README-zh_CN.md      # 中文测试文档
+│   ├── conftest.py          # Pytest 配置夹具
 │   ├── test_cli.py          # CLI 接口的单元测试
-│   ├── test_integration.py  # 构建过程的集成测试
-│   ├── test_dash_simple.py  # 简单的 Dash 集成测试（无需浏览器）
-│   ├── test_dash_integration.py  # Dash 端到端集成测试（需要浏览器自动化）
-│   └── test_dash_callbacks.py    # Dash 回调和布局测试
+│   ├── test_dash_integration.py  # Dash 端到端集成测试
+│   ├── test_plugin.py       # 插件核心功能的单元测试
+│   └── test_utils.py        # 实用函数的单元测试
 ├── example_app.py           # 示例 Dash 应用
-├── requirements.txt         # 运行时依赖
-├── requirements-test.txt    # 测试依赖
-├── setup.py                 # 安装脚本
+├── requirements-dev.txt     # 开发和测试依赖
 ├── pyproject.toml           # 构建配置
 ├── pytest.ini               # Pytest 配置
 ├── ruff.toml                # Ruff 配置（代码检查）
@@ -304,47 +302,24 @@ dash-tailwindcss-plugin/
 ## 开发
 
 1. 克隆仓库
-2. 安装依赖：`pip install -r requirements.txt`
-3. 安装测试依赖：`pip install -r requirements-test.txt`
-4. 以开发模式安装：`pip install -e .`
-5. 运行示例：`python example_app.py`
-
-### 可选依赖
-
-用于开发和测试依赖：
-
-```bash
-pip install -e .[test]
-```
-
-用于开发和所有依赖：
-
-```bash
-pip install -e .[dev,test]
-```
+2. 安装开发依赖：`pip install -r requirements-dev.txt`
+3. 以开发模式安装：`pip install -e .`
+4. 运行示例：`python example_app.py`
 
 ## 运行测试
 
-该项目使用分层测试方法：
-
-1. **基础测试** - 无需浏览器自动化运行（推荐用于大多数情况）
-2. **高级测试** - 需要浏览器自动化进行端到端测试
-
 ```bash
-# 安装测试依赖
-pip install -r requirements-test.txt
+# 安装开发依赖（包含测试依赖）
+pip install -r requirements-dev.txt
 
-# 运行基础测试（无需浏览器自动化）
-python -m pytest tests/test_plugin.py tests/test_utils.py tests/test_cli.py tests/test_integration.py tests/test_dash_simple.py
-
-# 运行所有测试（包括需要浏览器自动化的测试）
+# 运行所有测试
 python -m pytest tests/
 
 # 运行特定测试文件
 python -m pytest tests/test_plugin.py
 python -m pytest tests/test_utils.py
 python -m pytest tests/test_cli.py
-python -m pytest tests/test_dash_simple.py
+python -m pytest tests/test_dash_integration.py
 
 # 运行带详细输出的测试
 python -m pytest tests/ -v
@@ -353,7 +328,7 @@ python -m pytest tests/ -v
 python -m pytest tests/ --cov=dash_tailwindcss_plugin --cov-report=html
 ```
 
-更多信息请参见 [tests/README.md](tests/README.md)。
+更多信息请参见 [tests/README-zh_CN.md](tests/README-zh_CN.md)。
 
 ## 构建包
 
