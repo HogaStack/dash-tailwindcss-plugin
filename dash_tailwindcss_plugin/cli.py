@@ -1,6 +1,11 @@
 import argparse
+import logging
 import json
-from .utils import logger, NodeManager, TailwindCommand
+from py_node_manager import get_logger
+from .utils import TailwindCommand
+
+
+logger = get_logger(logging.getLogger(__name__))
 
 
 class _TailwindCLI:
@@ -90,16 +95,7 @@ class _TailwindCLI:
                 logger.error(f'Invalid JSON for theme config: {e}')
                 theme_config = None
 
-        node_manager = NodeManager(
-            download_node=args.download_node,
-            node_version=args.node_version,
-            is_cli=True,
-        )
         self.tailwind_command = TailwindCommand(
-            node_path=node_manager.node_path,
-            node_env=node_manager.node_env,
-            npm_path=node_manager.npm_path,
-            npx_path=node_manager.npx_path,
             tailwind_version=args.tailwind_version,
             content_path=args.content_path if args.content_path else ['**/*.py'],
             plugin_tmp_dir=args.plugin_tmp_dir,
@@ -107,6 +103,8 @@ class _TailwindCLI:
             output_css_path=args.output_css_path,
             config_js_path=args.config_js_path,
             is_cli=True,
+            download_node=args.download_node,
+            node_version=args.node_version,
             theme_config=theme_config,
         )
 
@@ -176,7 +174,3 @@ def main():
     """
     cli = _TailwindCLI()
     cli.run()
-
-
-if __name__ == '__main__':
-    main()
